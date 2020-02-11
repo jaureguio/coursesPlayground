@@ -108,3 +108,77 @@
   myHand.forEach((card) => console.log(d.readCard(card)));
   
 */
+
+/*
+
+*** Challenge 4: Functional Cashier ***
+
+  interface CartItem {
+    name: string;
+    price: number;
+    qty: number;
+  }
+
+  interface CartApi {
+    length: number;
+    total: number;
+    addItem(item: CartItem): CartApi
+    add(name: string, price: number, qty?: number): CartApi
+  }
+
+  function cashier(): CartApi {
+    let cart: CartItem[] = [];
+
+    return {
+      addItem(item) {
+        cart.push(item);
+        return this;
+      },
+      add(name, price, qty=1) {
+        cart.push({ name, price, qty });
+        return this;
+      },
+
+      get length() {
+        return cart.reduce((acc, {qty}) => acc + qty, 0)
+      },
+
+      get total() {
+        return Math.round(cart.reduce((acc, {price, qty}) => acc + price*qty, 0)*100)/100
+      }
+    }
+  }
+
+  let cart = cashier();
+  cart
+    .add('Apple', .99)
+    .add('Pear', 1.99, 2)
+    .addItem({
+      name: 'Banana',
+      price: 2.99,
+      qty: 3
+    })
+
+  console.log(`Your total for ${cart.length} items is ${cart.total}`)
+*/
+
+let oscar = {
+  _name: 'Oscar',
+  [Symbol.iterator]() {
+    let i = 0;
+    let str = this._name;
+    return {
+      next() {
+        if (i < str.length) return { value: str[i++], done: false }
+        return { value: undefined, done: true }
+      }
+    }
+  }
+};
+
+// let it = oscar[Symbol.iterator]();
+
+for (let letter of oscar) {
+  console.log(letter)
+}
+
