@@ -285,7 +285,7 @@
 /*  
   *** Challenge 06 - Fibonacci Generator *** */
 
-  /* 
+/* 
     function* getFibSequence() {
       let twoAgo = 1;
       let oneAgo = 0;
@@ -299,10 +299,10 @@
 
     let fib = getFibSequence()
     console.log(fib)
-  */  
+*/  
   
-  /*
-    * Implementation using plain closure in a iterator form:
+/*
+    *** Implementation using plain closure in a iterator form:
 
         function getFibSequence() {
           let two = 1
@@ -315,9 +315,120 @@
             }
           }
         }
-  */
+*/
 
 /*
+    *** Async/await implementation using Promises and Generators ***
+
+        ->USING PLAIN JAVASCRIPT`:
+
+          function wait(ms) {
+            return new Promise((resolve) => {
+              setTimeout(resolve, ms)
+            })
+          }
+
+          function isPromise(fn) {
+            return fn instanceof Promise;
+          }
+
+          function* generator() {
+            let first = yield wait(1500).then(() => 'FIRST');
+            console.log(`first: ${first}`);
+            let second = yield wait(1500).then(() => 'SECOND');
+            console.log(`second: ${second}`)
+        //  let third = yield `third`;
+            return 'third'
+            console.log(third)
+          }
+
+          function task(genFn) {
+            let p = new Promise((resolve) => {
+              let it = genFn();
+              let lastVal;
+
+              function nextStep(lastPromiseVal) {
+                let {value, done} = it.next(lastPromiseVal)
+                  if (done && typeof value === 'undefined') {
+                  // console.log('done')
+                  lastVal = lastPromiseVal
+                  resolve({value, lastVal})
+                  return;
+                } else {
+                  lastVal = value;
+                  if (isPromise(value)) {
+                    // console.log('is a promise');
+                    value.then((promiseVal) => {
+                      nextStep(promiseVal);
+                    })
+                  } else {
+                    // console.log('not a promise');
+                    nextStep(value);
+                  }
+                }
+              }
+              nextStep();
+            })
+            return p
+          }
+
+          task(generator).then(({val, lastVal}) => console.log(val, lastVal))
 
 
+        ->USING TYPESCRIPT:
+
+            function wait<T>(ms: number): Promise<T> {
+              return new Promise((resolve) => {
+                setTimeout(resolve, ms)
+              })
+            }
+
+            function isPromise<T>(fn: Promise<T>): boolean {
+              return fn instanceof Promise;
+            }
+
+            function task<T>(genFn: () => IterableIterator<any>): Promise<T> {
+              let p = new Promise<T>((resolve) => {
+                let it = genFn();
+                let lastVal: any;
+
+                function nextStep(lastPromiseVal: any) {
+                  let {value, done} = it.next(lastPromiseVal)
+                  if (done && typeof value === 'undefined') {
+                    // console.log('done')
+                    resolve(lastVal as T)
+                    return;
+                  } else {
+                    lastVal = value;
+                    if (isPromise(value)) {
+                      // console.log('is a promise');
+                      value.then((promiseVal: any) => {
+                        nextStep(promiseVal);
+                      })
+                    } else {
+                      // console.log('not a promise');
+                      nextStep(value);
+                    }
+                  }
+                }
+                nextStep();
+              })
+              return p
+            }
+
+            task(function* () {
+              let first = yield wait(1500).then(() => 'FIRST');
+              console.log(`first: ${first}`);
+              let second = yield wait(1500).then(() => 'SECOND');
+              console.log(`second: ${second}`)
+              let third = yield `third`;
+              console.log(third)
+            })
+
+          * The usage of several any's  in here should be avoided, but the point to prove here is the implementation of async/await with generators.
 */
+
+/* ### 07. REACT & TYPESCRIPT ### */
+
+   
+  // */
