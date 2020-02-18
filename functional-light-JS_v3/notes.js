@@ -367,55 +367,103 @@
         
   *** Equational Reasoning ***        
         
+    ->It is a style of writing functions without writting any of it. We create functions based on other functions.    
+      Mathematically speaking, it refers to the way of writing a function fixing certain input values.  
+    
+    ->We have to be aware of possible situations where to 'fix' input values by performing
+      what it's called Equational Reasoning. This means that if we have lets say a callback function that is been 
+      passed to another function as input, and this callback wraps and return another function with the same shape 
+      (it takes the same amount of arguments as parametres from the callback), we can simply pass the wrapped/return
+      function to the outer on. We have to detect interchangebly functions in order to perform this step 
+    
+    ->Equational Reasoning allows us to specify that some function is equationally similar to another one in terms
+      of the shape of them.
+
+      getPerson(function onPerson(person) { // Notice the parameter person been passed as argument to renderPerson
+        return renderPerson(person);
+      });
         
+      // Applying Equational Reasoning  
+      getPerson(renderPerson); // Here we can notice that the 'person' parameter is completely ommited (point-free)
         
+*** Point Free Refactor Example ***
+
+  function isOdd(v) {
+    return v % 2 == 1;
+  }        
+         
+  function isEven(v) { // Be aware, look at 'v'!
+    return !isOdd(v);
+  }      
         
+  isEven(4); // True
         
+    * After refactoring
         
+      function not(fn) { // This functions is commonly called 'complement' or 'negate' in some functional programming libraries
+        return function negated(...args) {
+          return !fn(...args);
+        };
+      }  
         
+      function isOdd(v) { ... }  
         
+      var isEven = not(isOdd);
+      isEven(4); // True
         
+      * We can achieve a more declarative coding style with this approach because at the end of the day we are 
+        omitting what can be considered innecessary details about the code we write.
         
+      * Additionally, we can see that the relation between a function gets even more clearer with this approach.  
         
+          function isShortEnough(str) {
+            return str.length <= 5;
+          }
+          
+          // Instead of writing this way
+          // function isLongEnough(str) {
+          //  return !isShortEnough(str);
+          // }
         
+          var isLongEnough = not(isShortEnough);
         
+  *** Advanced Point-Free ***
         
+    ->Composition pattern is the idea of taking the output of a function and directly as the input of another function.
+    
+        function mod(y) {
+          return function forX(x) {
+            return x % y;
+          }
+        }
         
+        function eq(y) {
+          return function forX(x) {
+            return x === y;
+          };
+        }
         
+        var mod2 = mod(2);
+        var eq1 = eq(1);
         
+        // Instead of taking a least readably approach like this
+        // function isOdd(x) {
+        //  return eq1( mod2( x ) )
+        // }
+
+        function compose(fn2, fn1) {
+          return function composed(v) {
+            return fn2( fn1() );
+          }
+        }
         
+        var isOdd = compose(eq1, mod2);
         
+### 05. Closure ###
+
+  *** Closure ***
         
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+    ->
         
         
         
