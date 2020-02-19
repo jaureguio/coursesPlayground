@@ -1,3 +1,11 @@
+/* 
+
+#
+#
+####### TYPESCRIPT FUNDAMENTALS, V1 #######
+#
+#
+
 /* ### 02. TYPES ### */
 
 /*
@@ -428,7 +436,47 @@
           * The usage of several any's  in here should be avoided, but the point to prove here is the implementation of async/await with generators.
 */
 
-/* ### 07. REACT & TYPESCRIPT ### */
+/*
 
-   
-  // */
+#
+#
+####### TYPESCRIPT FUNDAMENTALS, V2 #######
+#
+#
+
+### 06. Generics ###
+
+  *** Dictionary exercise ***
+*/
+
+// /*
+    type Dict<T> = {
+      [anythingWeWant: string]: T | undefined;
+    }
+
+    function mapDict<T, S>(
+      dict: Dict<T>, 
+      fn: (val: T, idx: number) => S
+    ): Dict<S> {
+      const out: Dict<S> = {};
+      Object.keys(dict).forEach((dKey, idx) => {
+        const thisItem = dict[dKey];
+        if (typeof thisItem !== 'undefined') {
+          out[dKey] = fn(thisItem, idx)
+        }
+      });
+      return out;
+    }
+
+    console.log(mapDict({
+      a: 'a',
+      b: 'b'
+    }, (str) => ({ val: str })))
+    
+
+    
+// */
+
+
+
+
