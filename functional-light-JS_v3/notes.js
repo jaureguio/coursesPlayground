@@ -847,4 +847,449 @@
 
   *** Immutability ***
 
+    ->Immutability implies that something is not going to change. However, it can also be defined to express something is not going to change UNEXPECTEDLY.
+
+        * There's a lot of state change in our programs, being that the whole point of them, to allow controlled changes to state. So we have to think
+          of immutability as something that refers to changes but made intentionaly, changes made with us being aware of them.
+
+        * Immutability can be related to the concept of how do we control mutation/change.
+
+    ->There are two different kinds of immutabiility that we want to pay attention to:
+
+      * Assignment Immutability.
+
+        - Relates to the idea that a variable cannot be reassigned to a different value after its declaration/initialization.
+*/
+          var basePrice = 89.99;
+          const shippingCost = 6.50;
+
+          // other code here
+
+          basePrice += 5.00;    // Allowed, however, we are not mutating the inital basePrice value, which is a primitive (a number).
+                                // primitives cannot be mutated. Instead what is really happening here is an assigment mutation.
+
+          shippingCost += 1.04; // not allowed! assignment mutations cannot be performed to a const-declared variable.
+/*          
+
+        - Functional programmers received very well the incorporation of the const keyword into the JS language due to the fact that it 
+          prohibits variable reassignments. As a matter of fact, a functional programmer tend to avoid assignments at all cost, thats why
+          we can see long-sized composition operations between a lot of functions within functional programming (one function's output is 
+          passed directly as argument/input of another function - referential transparency - instead of assigning intermediate values
+          between function calls).
+
+        - In functional programming, functions are actually the means by which some state changes are achieved. Base state values are passed 
+          as inputs and a new value is computed and return from within the funcion.
+*/
+
+            function increasePrice(price) {
+              return price + 5.00;
+            } 
+
+            increasePrice(basePrice); // 94.99
+
+            function increaseShipping(shipping) {
+              return shipping + 1.04;
+            }
+
+            increasingShipping(shippingCost); // 6.76
+/*
+      * Value Immutability.
+
+        - One thing that a functional programmer does is to try to predict where bugs are going to be and avoid them before they occur by using 
+          patterns where they can't happen. 
+
+        - Passing a value by reference to a function whose implementation is not known by us, creates a potential source for bugs if no appropiate
+          preventions were to be taken.
+*/
+            const orderDetails = { // this object could be easily mutated in the future by other parts of our code or even third-party's  code.
+              orderId: 42,
+              total: (basePrice + shipping)
+            };
+
+            if (orderedItems.length > 0) {
+              orderDetails.items = orderedItems;              
+            }
+
+            processOrder(orderDetails); // If processOrder implementations details with regard to its argument's manipulation were not known, 
+                                        // orderDetails (value passed by reference) could be modified inside the function and alter other parts
+                                        // of our code that depends on this object
+/*
+  *** Rethinking const Immutability ***
+    
+    ->We need to be aware of the fact the "const" keyword is intended to avoid reasignment of values to an already declared variable. Notice that
+      refer to the declared values as variables even though we are using the const keyword to do so.
+    
+    ->The usage of the const keyword could potentially be a source of cunfusion when new unexperienced readers of our code are trying to understand
+      what is the purpose of it. 
+
+        * All declared objects (objects, array, functions) can be mutated even when declaring them with the const keyword.
+
+  *** Object.freeze ***
+  
+    ->The language has a built-in way to create read-only data structures (never need to be mutated) from native JS objects. Object.freeze prevents 
+      mutation to the internal properties from a declared object value.
+        
+        * Object.freeze only modifies the properties for the first layer them. Nested objects has to be individually frozen. 
+        
+        * The important take away of using this method is that we ensure to communicate to the reader of the code that the value is not going to be
+          nor should be modified.
+*/
+      // ...
+      processOrder(Object.freeze(orderDetails));
+/* 
+
+  *** Don't Mutate, Copy ***
+
+    ->We should always assume that an object cannot be mutable and even more when is passed b reference.
+
+        * When we write functions that receive data structures, we should treat them as if they were readonly, hence the correct approach to execute 
+          functionality based of the contents of the data structure is to create a copy of it and apply changes needed to this local copy. 
+*/
+
+            function processOrder(order) {
+              var processedOrder = { ...order };
+              if (!("status" in order)) {
+                processedOrder.status = "complete";
+              }
+
+              saveToDatabase(processedOrder);
+            }
+/*
+
+  *** Immutable Data Structures ***
+
+    ->An immutable data structure is one that allows not no mutation but rather structure-controlled intentional mutation (when the required mode is 
+      enabled for it).
+
+        * They are representations of the data structures we are used to deal with no access to the underlying DS, what we only have is an API to access it.
+          The API creates underlying control to prevent the DS to be changed unexpectedly. 
+
+        * A Immutable Data Structure basically says we cannot make changes to it but rather create a new one based off of it with the required changes applied
+          in it (similar to the concept used in the previous code snippet).
+
+        * API from these immutable data structures will return to us new DS with specified changes applied on it, without afecting the DS the newly created one is
+          based from. This prevents modification of the original DS that other parts of our code can be relaying upon.
+
+        * Immutable Data Structures provide performance optimization regarding the process of creating copies everytime a change need to be done to a DS (this
+          is a performance issue in terms of garbage collection and cpu cost due to potentially creation of several copies from an object per second in larger apps).
+
+            - The way Immutable DS are design is to intentionally mitigate this performance issue; DS internally creates a new DS with the addtional changes on it
+              and a pointer that points back to the previous version of the DS (similar to Git approach of creating unique objects chained back to its parent).
+
+  *** Immutable.js Overview ***
+*/
+    var items = immutable.List.of(
+      textbook,
+      supplies
+    );
+
+    var updatedItems = items.push(calculator);
+
+    items === updatedItems; // false
+
+    items.size;             // 2
+    updatedItems.size;      // 3
+/*
+
+  *** Immutable, Functionaly Pure Lucky Lottery Numbers Exercise ***
+*/
+    "use strict";
+
+    function lotteryNum() {
+      return (Math.round(Math.random() * 100) % 58) + 1;
+    }
+
+    // Sorting impurity is contained inside the function itself, this step 
+    // doesn't affect any other parts of the program.
+    function recordNumber(num, numbers) { 
+      if (!numbers.includes(num)) {
+        numbers = [ ...numbers, num ];
+        numbers.sort(function asc(x,y) {
+          return x - y;
+        });
+      }
+      return numbers;
+    }
+    
+    var luckyLotteryNumbers = [];
+    const NUM_COUNT = 6;
+
+    while (luckyLotteryNumbers.length < NUM_COUNT) {
+      luckyLotteryNumbers = recordNumber(
+        lotteryNum(), // Impurity from this function executed is not triggered inside the recordNumber() call
+        Object.freeze(luckyLotteryNumbers)
+      );
+    }
+
+    console.log(luckyLotteryNumbers);
+/*
+
+### 08. Recursion ###
+
+  *** Recursion ***
+
+    ->Recursion can be defined as a pattern of writing a programming function that gets invoked from within itself until a base condition / code branch is accomplished. 
+      A variaty of algorithmic patterns/strategies (recursion happens to fit very well into the major of them) can be followed in order to define a recursive function. 
+      
+
+      * When these patterns are well understood and cases where they can be used to solve some kind of problems are easily identified makes of recursion a valuable 
+        functional programming tool to face problem solving.
+      
+      * Common approaches to design recursive functions are:
+        - Solve sub-problems: 
+          
+          <> do something and reduce the problem set into a smaller one and keep reducing repeating the pattern.
+          <> reduce/break a problem into smaller pieces, easier to understand, that can be iteratively resolved, each of which continuously adds to the whole solution.
+        
+        - Divide and Conquer:
+
+          <> Assertions to eliminate half of a problem are performed, repeating the process dividing the resulting problem into its half again.
+
+      * Every single one recursive solution is going to ahve, at a minimum, a base condition. The base condition is what let us know when to stop.
+
+    ->Recursion is designed/conceived to be a declarative approach (not concerned on how something happens but rather what is the outcome of it).
+*/     
+        function countVowels(str) {
+          if (str.length === 0) return 0;
+          var first = (isVowel(str[0]) ? 1 : 0);
+          return first + countVowels( str.slice(1) );        
+        }
+
+        countVowels(
+          "The quick brown fox jumps over the lazy dog"
+        );
+        // 11
+/*
+  *** Base Condition Location ***
+
+    ->Sometimes better optimizations for performance can be achieved based on where to locate the base condition of the recursive function. The following change aims to 
+      avoid the last call to the function where the 0 is return:
+*/
+      function countVowels(str) {
+        var first = (isVowel(str[0]) ? 1 : 0);
+        if (str.length <= 1) return first;
+        return first + countVowels( str.slice(1) );
+      }
+
+      // ...
+/*
+
+  *** Palindrome Exercise ***
+*/
+    function isPalindrome(str) {
+      var last = str[str.length - 1]
+      if ( str.length <= 1 ) return true;
+      if ( str[0] !== last ) {
+        return isPalindrome(str.slice(1, last))
+      }
+        return false;
+    }
+/*
+
+  *** Stack Frames & Memory Limits ***
+
+    ->The major problem that has been some way excluding recursion from been a required programming technique to learn in depthh is the limitation in the stack frames of mamory (memory limits).
+
+        * When a function calls out another function (not in a recursive way necessarily speaking), at this moment, everything that was currently happening in the calling function needs to get saved
+          somehow so that all the stuff that happens in the called function doesn't mess up with what was happening in the first one.
+
+          - Everytime a function is executed, an area of memory is reserved to store all the environment variables to be defined in it (amongst others). In Computer Science this is called Stack Frame.
+            It is also commonly called memory frame.
+          
+          - When we have several functions that call each other, what we have is a stack of function calls. The stack data structure idea is used because when the top-most function finish its execution,
+            it gets pop off the stack back to the previous one (picking where it left off), returning any computed value it perfomed, getting rid of the memory utilized to track its process execution.
+            When a function resume its execution after another function is pop off the stack, the former can call again other functions, increasing the stack size once again.
+            
+        * A stack frame stores all the environment variables declared within the function call, the program counter that keeps track of the line of code executed and additional low level things computers
+          need to track to determine whats happening inside a function. 
+
+  *** Optimization - Tail Calls ***
+
+    ->The idea behind Tail Calls refers to if a function call happens in the tail (very end) of the execution logic of the calling function, the stack frame of the latter can be discarded representing a 
+      memory optimization on recursie patterns.
+
+    ->Tail Calls represent a memory optimization that prevents unnecessary runaway memory usage. Multiple stack frames arent needed anymore because of the way this function call pattern works; run functions
+      in an essentially fixed memory space (O(1) memory usage insted of O(n)) when implementing recursion.
+
+    ->It is important to understand that Tail Calls are an additional feature that our compiler/runtime has to support.
+
+  *** Proper Tail Calls ***
+
+    ->The refer to the idea that proper tail calls get memory optimized (only used O(1) memory usage).
+
+      * PTC was standarized on JS and to leverage it, code must follow the next aspects:
+
+        - Strict mode has to be enabled (not in sloppy mode)
+       
+        - Function calls have to be on a Proper Tail position; nothing has to happen after a function call finishes except for its value to be return.
+       
+        - Requires a return keyword, a single function call and nothing else in the expresion should be computed afterwards.
+       
+           <> If there is a ternary expression is present in the return statement and the function call is in one of the branches, it qualifies as a PTC (nothing else is going to happen besides the computation of
+              one of the branches, one of which may end up been PTC).
+
+      * The JS spec states that the JS engine has to make sure no matter how deep that chain of function calls gets, we should not get a range error (run the system out of memory).
+*/
+          "use strict";
+
+          function decrement(x) {
+            return sub(x,1); // Proper tail call
+          }
+
+          function sub(x,y) {
+            return x - y;
+          }
+
+          decrement(43); // 42
+/*
+
+  *** Refactoring to PTC From ***
+
+    ->In our previous countVowels() example we dont met the requiements to a PTC because we have an assigment operation that needs to be computed after the recursive execution of countVowels(). This means that we will
+      have stack frames to keep around.
+
+        * Many forms of recursion (not all) can be reoriented to take advantage of tail calls.
+        
+        * When we have a fork (binary or n-nary) form of recursion we cannot do tail calls because one of the calls is not going to be in a tail position (we can have one call but not many in tail position).
+
+    ->Instead of keep track/preserve a variable in the current stack frame of a calling function, finish all the required computation and pass it to the next stack frame, repeating this approach with each function call. 
+     This is achieved by reserving one of the argument position to pass the result of some computation needed to the next recursive call:
+*/
+  
+      "use strict"
+
+      function countVowels(count, str) {
+        count += (isVowel(str[0]) ? 1 : 0);
+        if(str.length <= 1) return count;
+        return countVowels( count, str.slice(1) );
+      }
+
+      countVowels(
+        0,
+        "The quick brown fox jumps over the lazy dog"
+      );
+      // 11
+/*  
+    
+    ->We could create an interface function that have a nice clean signature, hidding away the recursive function with the non-clean signature as the one above:
+*/  
+      "use strict"
+
+      var countVowels = curry(2, function countVowels(count, str) {
+        count += (isVowel(str[0]) ? 1 : 0);
+        if (str.length <= 1) return count;
+        return countVowels( count, str.slice(1) );
+      })(0);
+
+      countVowels(
+        "The quick brown fox jumps over the lazy dog"
+      )
+      // 11
+/*
+
+  *** Continuation-Passing Style ***  
+
+    ->PTC is something that we actually cannot be relying upon with all browser's JS engines. We have to consider additional strategies for writting recursive algorithms without having to rely on the optimization provided
+      by PTC. This strategy, not intended to be used in JS, uses the term continuation-passing to refer to that a callback function is been passed.
+        
+        * It is important to state that we end up with CPS after a process of code conversion, meaning that is not commonly to see developers writing CPS manually. CPS has a confusing look because it is in fact write by a 
+          machine.
+
+        * A function that just take and return the argument passed to it, it's called identity function.
+*/
+            function countVowels(str, cont = (v)=>v) {
+              var first = (isVowel(str[0]) ? 1 : 0);
+              if (str.length <= 1) return cont(first);
+              return countVowels(str.slice(1), function f(v) {
+                return cont(first + v);
+              });
+            }
+
+            contuntVowels(/* ... */)
+/*
+              - The countVowels() function creates new f() callbacks with every recursive call, named "cont". Each new f() definition wraps (defers) the execution of the previous f() passed into. 
+                The last recursive execution invokes the f() callback (if statement branch), which in turn execute all the previous f() ever defined.
+
+              - What is actually happening is the deferring of the cont() execution by creating a bigger function with each recursive call. The last countVowels() invocation  is what executes the 
+                count() which end up triggering the invocation of all previous cont() functions.
+
+              - This is not actually solving the memory problem. With every new f() (or cont()) function we are actually reserving an space in memory not from the call stack but from the heap instead.
+                  
+                  * The heap is a dynamic area of memory that allocates variables been create during our program execution.   
+
+    ->This strategy is actually implemented in languages used in C compilers where they do not deal with closure like we do in JS (which is what causes the memory Heap problem in thsi strategy).
+
+        * Closure represents allocation of memory off of the heap.
+
+  *** Trampolines ***
+
+    ->We should keep in mind the idea from the previous CPS strategy of deferring some work via wrapping within a callback that's executed later. This is a key concept in the usage of another strategy
+      called trampolines. A trampoline represents the idea that we want something bouncing back and forwards.
+
+        * Instead of having a function calling another function. which calls another function and so on, this strategy implies a function calling another function which return a function (not the execution).
+          In this strategy, the stack layers never goes beyond 1. Instead of making a recursive call, we return a function that will make the next call.
+*/
+            // A basic implementation of a trampoline can be as follows:
+            function trampoline(fn) { // Any popular functional library should provide a more sophisticated trampoline utility
+              return function trampolined(...args) {
+                var result = fn(...args);
+
+                while (typeof result == "function") {
+                  result = result();
+                }
+
+                return result;
+              }; 
+            }
+/*
+    ->In order to implement this trampoline strategy is that we have to take any function call that would've been recursive and wrap it in a function and then return it:
+*/
+        var countVowels = trampoline(function countVowels(count, str) {
+          count += (isVowel(str[0]) ? 1 : 0);
+          if (str.length <= 1) return count;
+          return function f() { // Here is the wrapping function required to implement Trampolines strategy
+            return countVowels(count, str.slice(1));
+          };
+        });
+
+        countVowels(0, /* some string */)
+
+        // Optionally
+        countVowels = curry(2, countVowels)(0);
+        countVowels(/* some string */)
+/*
+          * "The way the wrapping function f() works is because it has closure over all the things it needed; it temporarily holds on to those values so that they can be return back to the trampolined utility,
+            popping the call stack and immediately invokes that, starting back over".
+
+          * "We are taking advantage of the place where we are storing the information is the return value of our stack frame, which then pops the stack frame off".
+
+    ->"The reason for this form of recursion is that it will be very easy to convert to real tail call form at some later time if we get to the point tail calls are reliable in cross JS".
+      
+        * All we (or some convertion tool) would need to know is that a trampoline is implemented and remove the wrapping f() function in favor to the direct return of the recursive call of countVowels() in this 
+          particular exercise case.
+
+    ->Even when this code is quite more complex with respect to the place where we started, it is significantly more declarative than an iteratively for-loop version of countVowels().
+
+    ->"Trampolines is the preferred way of doing recursion when we can take advantage of tail calls".
+      
+        * "The difference between a trampoline call and regular recursion is that in the latter, we literally stack all the work done ('you do some work, then you do so work, then you do some work...'), which provoques
+          increase on memory size used. In a trampoline we never stack up the work, instead we do some work which at the end return a function to the trampolined utility that would execute additional work when the 
+          trampolined utility decides to. We are bouncing up and down between a stack depth of 0 and a stack depth of 1 over and over again. This allows us to avoid the range error from a regular recursive call"  
+
+### 09. List Operations ###
+
+  *** Map - Transformation ***
+
+*/
+
+/*
+
+*/
+
+/*
+
+*/
+
+/*
+
 */
