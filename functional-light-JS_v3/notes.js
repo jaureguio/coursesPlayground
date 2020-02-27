@@ -1279,7 +1279,8 @@
 ### 09. List Operations ###
 
   *** Map - Transformation ***
-
+  
+    ->
 */
 
 /*
