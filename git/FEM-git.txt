@@ -1,7 +1,389 @@
 	# MAKE NOTICE THAT THE PATHS ARE SPECIFIED BASED ON POWERSHELL'S NOMENCLATURE
 
-#### PREVIOUS CHAPTERS' NOTES ####
+#### 01. Git Basic Concepts ####
 
-  ->
+  *** The Key - SHA1  ***
+    
+    ->Is a cryptographic hash function. 
+        
+      * Given a piece of data, it produces a 40-digit hexadecimal number.
+      * This values should always be the same if the given input is the same.
 
-### 0. ###
+  *** The Value - BLOB ***
+
+    ->Git stores the compressed data in a blob, along with metadata in a header:
+
+      * The identifier blob.
+      * The of the content.
+      * \0 delimiter (C's end of line).
+      * Content.
+
+    ->We can ask Git for the SHA1 of a given content.
+
+      <>  echo "Hello, World!" | git hash-object --stdin
+
+  *** Git's Data Storage ***
+
+    ->The automatically created .git/ directory (created when running the git init command) is where Git's repository data is stored.
+
+      * Blobs are stored in the objects directory inside .git/
+
+  *** Tree ***
+
+    ->Represents a snapshot of the repository. A tree contains pointers (using SHA1) to blobs and other trees (files and directories).
+
+    ->It also contains metadata:
+
+      * Type of pointer (blob or tree).
+      * filename or directory name.
+      * Mode (executable file, symbolic link, ...).
+
+    ->We can obtain a printed tree representation of some directory using the "tree <directoryPath>" command.
+
+  *** Optimizations ***
+
+    * Identical content is only stored once. Git create references to the same content with it is required multiple times.
+    * Git objects are compressed.
+    * As files change, their contents remain mostly similar.
+    * Git optimizes for this by compressing these files together, into a Packfile.
+    * The Packfile stores the object, and "deltas", or the differences between one version od the file and the next.
+
+      - Packfiles are generated when we have too many objects, during commits or during a push to a remote.
+    
+  *** Commits ***
+
+    ->A commit is a code snapshot. It points to a tree and contains the following metadata:
+
+      * Author and committer.
+      * Date.
+      * Message.
+      * Parent commit (one or more).
+
+      * The SHA1 of the commit is the hash of all this information.
+
+    ->Commits point to parent commits as well.
+
+    ->To check a particular commit (or any given object in Git) we can use the git cat-file command:
+
+      <>  git cat-file -t 980a0 (-t is used to print the type of the object).
+      <>  git cat-file -p 581caa (-p is used to print the contents of the object).
+
+    ->Already created commits cannot be changed (unless the last commit, which can be amended). If data about the commit is changed, it will have a new SHA1 hash. Even if the files don't change, the created date will.
+      
+### 02. Git Main Areas ###
+      
+  *** The Working Area ***
+
+    ->The files in our working area that are also not in the staging area are not handled by Git. The files in this area are called "untracked files".
+
+  *** The Staging Area (a.k.a Index, Cache) ***
+
+    ->Holds the files that are going to be part of the next commit.
+
+    ->The staging area is how Git knows what will change between the current commit and the next commit.
+
+      * A "clean" staging area does not mean an empty one.
+      * Consider the baseline staging area as being an exact copy of the latest commit.
+    
+    ->The plumbing command "git ls-files -s" will show us what's in the staging area.
+
+    ->We can move files in & out of the staging area:
+
+      * Add a file to the next commit: git add <fileName>
+      * Delete a file to the next commit: git rm <fileName>
+      * Rename a file to thee next commit: git mv <fileName>
+
+    ->When we have done a large amount of work to be referenced just by one commit, we can divide the work to be staged interactively in chuncks by using the "git add -p" command.
+
+      * The "?" option in this command provides detailed help about the different flags we could use.
+
+  *** The Repository ***
+      
+    ->The files Git knows about. Contains all of our commits.
+      
+  *** Secondary Areas: Stashing Area ***      
+
+    ->Save un-committed work. The stash is safe from destructive operations.
+
+    ->Git stash basic usages:
+
+      * Stash changes: git stash
+      * List changes: git stash list
+      * Show the contents: git stash show stash@{0}
+      * Apply the last stash: git stash apply
+      * Apply a specific stash: git stash apply stash@{0}
+
+      * Keep untracked files: git stash --include-untracked
+      * Keep all files (even ignored ones!): git stash --all
+
+      * Name stashes for easy references: git stash save "<descriptionMessage>"
+      * Start a new branch from a stash: git stash branch [<optionalStashName>]
+      * Grab a single file from a stash: git checkout <stashName> -- <filename>
+
+      * Remove the last stash, applying it changes in the working directory: git stash pop (doesn't remove if there's a merge conflict)
+      * Remove the last stash: git stash drop
+      * Remove the nth stash: git stash drop stash@{n}
+      * Remove all stashes: git stash clear
+      
+### 03. References ###
+
+  *** Types of Git References ***
+
+    * Tags & Annotated Tags
+    * Branches
+    * HEAD
+
+    ->We can use the "git show-ref" with the --heads flag to list all the SHA1 keys for the different branches HEADs.
+      
+      * We can filter out the results as in the following command: 
+
+        <>  git show-ref --heads | grep exercise3
+
+  *** What's a Branch? ***
+
+    ->A branch is just a pointer to a particular commit. The pointer of the current branch changes as new commit are made.
+
+  *** What's HEAD? ***  
+
+    ->HEAD is how Git knows what branch we are currently on and what the next parent will be.
+
+    ->It is a pointer. It usually points at the name of the current branch, but it can point at a commit too (detached HEAD).
+
+    ->It moves when we make a commit in the currently active branch or when we checkout anew branch.
+      
+  *** Git Tags ***
+
+    ->Lightweight Tags: these are just simple pointers to a commit. When we create a tag with no arguments, it captures the value in HEAD.
+
+      <>  git tag my-first-commit
+
+    ->Annotated Tags: point to a commit, but store additional information: author, message, date.
+
+      <>  git tag -a v1.0 -m "Version 1.0 of my blog"
+      
+    ->Working with tags:
+
+      * List all the tags in a repo: git tag
+      * List all tags, and what commit they're pointing to: git show-ref --tags
+      * List all the tags pointing at a commit: git tag --points-at <commit>
+      * Looking at the tag, or tagged contents: git show <tag-name>
+
+  *** HEAD-less / Detached HEAD ***
+
+    ->Sometimes we need tocheckout a specific commit (or tag) instead of a branch.
+    
+      * Git moves the HEAD pointer to that commit. As soon as we checkout a different branch or commit, the value of HEAD will point to the new SHA.
+
+      * There is no reference pointing to the commits we made in a detached state.
+
+    ->To save our work when working in a detached HEAD:
+
+      * Create a new branch that points to the last commit (which will hold a reference to its parents) you made in a detached state.
+
+        <> git branch <newBranchName> <commit>
+    
+    ->To discard the work:
+
+      * If we dont point a new branch at thosse commits, they will be no longer be referenced in Git (dangling commits).
+      * Eventually, they will be garbage collected.
+
+### 04. Merging ###    
+
+  *** Merge Commits ***
+
+    ->These are just commits that has multiple parents. It is a marker of when a new feature/branch is merged to another branch.
+
+      * Fast-Forward merges happens when we there is a clear path (no additional commits) to the base branch after the source branch (the branch we want to merge into base branch) was created.
+      
+      * To retain the history of a merge commit, even if there are no changes to the base branch, we use:
+
+        <>  git merge --no--ff <sourceBranch> (this will force a merge commit, even when one isn;t necessary).
+
+  *** Merge Conflicts ***      
+
+    ->Attempt to merge, but files have diverged. Git stops until the conflicts are resolved.
+
+      * Git RERERE - Reuse Recoerded Resolution:
+
+        - Git saves how we resolved a conflict. When a next conflict occurs, it reuse the same resolution.
+
+        - It is useful for long lived feature branch (lilke a refactor) and when rebasing
+
+        - It can be turned on with:
+
+          <>  git config rerere.enabled true (use --global flag to enable for all projects)
+
+        - The following command will show us the differences between conflicting files when rerere is enabled:
+
+          <>  git rerere diff  
+
+### 05. History & Diff  ###     
+
+  *** Commit Messages ***
+
+    ->Good commits help preserve the history of a code base. They help with:
+
+      * Debugging & troubleshooting
+      * Creating release notes
+      * Code reviews
+      * Rolling back
+      * Associating the code with an issue or ticket
+
+    ->Sometimes our commits encapsulates a really complicated idea and in cases like this a one line commit message is not enough to effectively transmit the idea. We can add a descriptive body
+      to our commit.
+
+      * Commit message is in future tense: "Fix" vs "Fixed".
+      * Short subject, followed by a blank line.
+      * The body of the message should represent a description of the current behavior, a short summary of WHY the fix is needed. Mention side effects. 
+      * The description should be broken into 72 character lines.
+      
+  *** Git Log ***
+
+    * What changed since yesterday?: git Log --since="yesterday" (or "2 weeks ago")
+
+    * Log files that have been moved or renamed: git log --name-status --follow -- <fileName> 
+
+    * Search for commit messages that match a regular expression: git log --grep <regExp> (can be mixed and matched with other git flags)
+      
+      <>  git log --grep=mail --author=oscar --since=2.weeks
+
+    * We can use a diff filter, which allows to selectively include or exclude files that have been (A)dded, (D)eleted, (M)odified, (R)enamed and more.
+
+      <>  git log --dif-filter=R --stat
+
+  *** Git Log: Referencing Commits ***
+
+    -> ^ or ^n
+
+      * no args == ^1: the first parent commit.
+      * n: the nth parent commit.
+
+    -> ~ or ~n
+
+      * no args == ~1: the first commit back, following 1st parent.
+      * n: number of commits back, following only 1st parent.
+
+    -> ^ and ~ can be combined.
+
+        (D) (E) (F)   
+         ^   ^   ^
+         |   |   |    A =      = A^0
+         |   |   |    B = A^   = A^1    = A~1
+         |   | / |    C = A^2
+         |  / /  |    D = A^^  = A^1^1  = A~2
+         | / /   |    E = B^2  = A^^2    
+         ( B )  (C)   F = B^3  = A^^3   = A^2^1
+         ^       ^
+         |       |
+         |      /
+         |     /
+         |    /
+   HEAD   (A)
+
+  *** Git Show: Look at a Commit ***
+
+    ->Show commit and contents: git show <commit>
+
+    ->Show files changed in commit: git show <commit> --stat
+
+    ->Look at a file from another commit: git show <commit>:<fileName>
+
+  *** Git Diff ***
+
+    ->Diff show you changes between commits, between the staging area and the repository and what's in the working area.
+
+      * To show unstaged changes: git diff
+      * To show staged changes: git diff --staged (--cache)
+
+  *** "Diff" Branches ***
+
+    ->Which branches are merged with master, and can be cleaned up?
+
+      <>  git branch --merged master
+    
+    ->Which branches aren't merfed with master yet?
+
+      <>  git branch --no-merged master
+
+### 06. Fixing Mistakes ###
+
+  *** Git Checkout ***
+
+    ->Restore working tree files or switch branches:
+
+     [ Working area ]  <---Checkout--- [ Staging area ] <---Checkout---- [ Repository ]
+
+    ->When we checkout a branch, the following happens:
+
+      1. Change HEAD to point to the new branch.
+      2. Copy the commit snapshot to the staging area.
+      3. Upadate the working area with the branch contents.
+
+    ->When we run the "git checkout -- <fileName>" command, the following happens:
+
+      * The working area copy gets replace with the current version from the current staging area.
+
+        >>> This operation overwrites files in the working directory without warning. <<<
+
+    ->When we run the "git checkout <commit> -- <fileName>" command, the following happens:
+
+      1. The staging area is updated to match the commit.
+      2. The working area is updated to match the staging area.
+
+        >>> This operation overwrites files in the working directory without warning. <<<
+
+    ->We can restore a deleted file by checking the parent commit of the point where the file was deleted:
+
+      <>  git checkout <deletingCommit>^ -- <fileName>
+
+  *** Git Clean ***
+
+    ->git clean will clear our working area by deleting untracked files.
+
+      * Use the --dry-run flag to see what would be deleted.
+      * Use the -f flag to do the deletion.
+
+      >>> This operation can cannot be undone! <<<
+
+  *** Git Reset ***
+
+    ->Reset is another commad that performs different actions depending on the arguments (with a path or without a path)
+      
+      * By default Git performs git reset --mixed.
+      * For commits, Git moves the HEAD pointer, optionally modifies files.
+      * For file paths, Git does not move the HEAD pointer, modifies files.
+
+    ->Cheat sheet for this command:
+
+      1. Move the HEAD and current branch.
+      2. Reset the staging area.
+      3. Reset the working area.
+
+      --soft            = (1)
+      --mixed (default) = (1) & (2) 
+      --hard            = (1) & (2) & (3)
+
+      >>> Never push changed history to a shared or public repository! <<<
+
+    ->We can restore a tracked file that has been modified with the version from the actual repo (last commit) using the following command:
+      
+      <> git reset -- <fileName>
+
+    ->We can apply changes from previous commits to tracked files as well:
+
+      <> git reset <commit> -- <fileName>
+
+    ->Undo a git reset with ORIG_HEAD:
+
+      * Git keeps the previous value of HEAD in a variable called ORIG_HEAD, in case of an accidental git reset or git merge.
+        To go back to the way things were:
+
+          <>  git reset ORIG_HEAD
+
+  *** Git Revert - The "safe" reset ***
+
+    ->git revert creates a new commit that introduces the opposite changes from the specified commit. 
+
+    ->The original commit stays in the repository, meaning that the history does not get modified with this command.
+
+    ->Use revert if we are undoing a commit that has already been shared.
