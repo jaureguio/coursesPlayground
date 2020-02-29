@@ -387,3 +387,141 @@
     ->The original commit stays in the repository, meaning that the history does not get modified with this command.
 
     ->Use revert if we are undoing a commit that has already been shared.
+
+### 07. Amend ###
+
+  *** Amend a Commit ***
+
+    ->Amend is aquick and easy shortcut that lets us make changes to the previous commit.
+
+      * We have to remember that commits can't be edited. Even is the tree the commit points to is the same, and the author is the same, the date is still different, so a new SHA1/commit is created
+      * A commit is referenced by the SHA of all its data.
+      * Original commit has no references pointing to it after an amend, and because of this it will be eventually garbage collected.
+
+      <>  git commit --amend (this command will generate a copy of the original commit with a different creation date).
+      <>  git commit --amend -m "Changing the message from the current commit" (a commit with a different message will be created, replacing the original commit).
+
+### 08. Rebase ###
+
+    ->Rebase allows us to avoid messy merge commits in our Git history. We can pull in all the latest changes from master, and apply our commits on top of them by changing the parent commit of the ones we want to rebase with master.
+
+      * This command lets us give a commit a new parent. It is similar to a Fast-Forward merge.
+      * The process consist on checking out the branch we want to rebase with master, and from there run the git rebase command:
+
+        <>  git checkout new_feature
+        <>  git rebase master
+            ...
+        
+            > First, rewinding head to replay your work on top of it...
+            > Applying: <messageFromTheCommitWeWantToRebase>
+
+
+    ->Rebase vs Merge:
+
+        copy of                                     new merge
+        original----->  ( COPY )<= new_feature      commit with---->  ( MERGE )<= new_feature
+        commit             |                       2 parents             |
+                          |                                    __________|
+                          v                                   |          v
+                      ( 25b38 )<= master                      |      ( 25b38 )<= master
+                          |                                   v          |
+          ( 4080a )       |                               ( 4080a )      |
+              |           |                                   |          |
+              |           v                                   |          v
+              '------>( cd0b5 )                               '----->( cd0b5 )
+
+                * git rebase master                              * git merge master (or should it be new_featuer?)
+
+    ->Powe of rebasing is that we can basically replay commits. 
+
+      * Commits can be edited, removed, combined, re-ordered and inserted before they're "replayed" on top of the new HEAD.
+    
+  *** Interactive Rebase ***
+
+    ->Interactive rebase opens an editor with a lost of "todos", in the format of: <rebaseOption> <commit> <commit msg>.
+
+      * Git will pick the commits in the specified order, or stop to take an action when editing or a conflict occurs.
+
+    ->Interactive rebase with a shortcut:
+
+      <>  git rebase -i <commitToFix>^ (the ^ specifies the parent commit)
+
+      * Interactive rebase options:
+
+        - pick: keep this commit.
+        - reword: keep the commit, just change the message.
+        - edit: keep the commit, but stop to edit more than the message.
+        - squash: combine this commit with the previous one. Stop to edit the message.
+        - fixup: combine this commit with the previous one. Keep the previous commit message.
+        - exec: run the command on this line after picking the previous commit.
+        - drop: remove the commit (tip: if you remove this line, the commit will be dropped too!).
+
+    ->Rebase can be used to SPLITS commits as well. Editing a commit can also split it up into multiple commits:
+
+      1. Start an interactive rebase with "git rebase -i".
+      2. Mark the commit with an edit.
+      3. git reset HEAD^.
+      4. git add.
+      5. git commit.
+      6. repeat (4) & (5) until the working area is clean!.
+      7. git rebase --continue.
+  
+    ->What if we want to amend an arbitrary commit?
+
+      1. git add new files.
+      2. git commit --fixup <commitSHAToFix>
+         
+         * This creates a new commit; the message starts with "Fixup!"
+      3. git rebase -i --autosquash <commitSHAToFix>^ (to rebase upon the parent of <commitSHAToFix>)
+      4. git will generate the right todos for you! just save and quit.
+
+    ->Running a command between every commit that is applied when rebasing:
+
+      <>  git rebase -i --exec "run-tests" <commit>
+
+      * Two options for exec:
+        
+        1. Add it as a command when doing interactive rebase.
+        2. Use it as a flag when rebasing.
+
+        - When used as a flag, the command specified by exec will run after every commit is applied.
+        - This can be used to run tests.
+        - The rebase will stop if the command fails, giving us a chance to fix what's wrong.
+
+    ->At any time before rebase is done, if things are going wrong:
+
+      <>  git rebase --abort
+
+  *** Rebase Pro Tips ***
+
+    ->Before a rebase / fixup / squash / reorder:
+
+      * Make a copy of the current branch:
+
+        <>  git branch my_branch_backup
+      
+      * Git branch will make a new branch, without switching to it.
+
+      * If rebase "succeeds" but we messed up:
+
+        <>  git reet my_branch_backup --hard
+
+    ->Commit early & often vs Good Commits:
+
+      * Git best practice: "commit often, perfect later, publish once"
+
+        - When working locally, commit whenever we make changes. This will help us to be a more productive developers.
+        - Before pushing work to a shared repo, rebase to clean up the commit history.
+    
+    ->Never rewrite public history:
+
+      * Rebase commits are copies. If other people are working on the same repository, they would be working on different commits.
+      * We could also cause massive merge conflicts.
+      * Even worse, we can cause people to lose their work.
+      
+    ->Rebase Advantages:
+
+      * We can slice and dice our Git history.
+      * It's easy to fix previous mistakes in code.
+      * We can keep our Git history neat and clean.
+
