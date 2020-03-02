@@ -1386,8 +1386,183 @@
       This way of coding makes impossible to compose multiple list operators when dealing with different data structures (each method is associated with a given DS).
       That's why when following FP principles and making use of a functional library, we use the standalone implementations of these list operators, which receives the operator function and 
       the DS on which they are going to be applied.
-*/
 
+### 10. Transduction ###
+
+  *** Transduction ***
+
+    ->It's a Technique that mathematically transform the shape of some given function. More specifically, transducing allows composition of reducers. This technique requires mappers and predicates to be
+      implemented with reducers, this is going to allow the composition of multiple reducers through the application of the transduction technique.
+
+    ->Whenever we see chains of maps, filters and reducers, surely we would be able to apply transduction. It is something clear that composition of these uncompatible (in terms of the shape) functions
+      could be accomplished by means of a containing reducer (as in the following code snippet), however this approach represents a more imperative way of composition in contrast with what we could achieve
+      with transduction.
+*/
+      var list = [1,3,4,6,9,12,13,16,21];
+
+      list
+      .reduce(function allAtOnce(total,v) {
+        v = add1(v);
+        if (isOdd(v)) {
+          total = sum(total,v);
+        }
+        return total;
+      }, 0);
+      // 42
+
+      // Approaching the same end point with Transduction:
+
+      var transducer = compose( // A regular compose, in this case of a map and filter functions implemented with reducers
+        mapReducer(add1),
+        filterReducer(isOdd)
+      );
+
+      transducer(
+        transducer,
+        sum,
+        0,
+        [1,3,4,6,9,12,13,16,21]
+      )
+      // 42
+
+      // Another utility helper which infers the reducer to be used in the transduce() function is into()
+      into(transducer, 0, [1, 3, 4, 6, 9, 12, 13, 16, 21])
+/*  
+
+    ->mapReducer, filterReducer and transducer are functions that will be provided to us by a functional library. 
+    
+      * The transducer consist of a reduce function, which gets passed the result of passing sum (reducer) function into the transducer (Higher Order Reducer) composition. The initial value and the list upon 
+        which apply the reduce are given as well.
+
+  *** Deriving Transduction ***
+
+    ->Extracting Reduce:
+
+      * We define the reduce implementation of map and filter with a reduce: 
+*/
+        function mapWithReduce(mapperFn, arr) {
+          return arr.reduce(function reducer(list, v) {
+            list.push(mapperFn(v));
+            return list;
+          }, []);
+        }
+
+        function filterWithReduce(predicateFn, arr) {
+          return arr.reduce(function reducer(list, v) {
+            if (predicateFn(v)) list.push(v);
+            return list;
+          }, []);
+        }
+
+        list = mapWithReduce( list, add1 );
+        list = filterWithReduce( list, isOdd );
+        list.reduce( sum );
+        // 42
+/* 
+      * We can extract the reducers from both functions. Transduction derivation requires composition of reducers, which is why we want to
+        extract reducers from the functions above:
+*/
+        // Note the way flexibility from both functions is enhanced by parameterizing the way reducer should combine a given list.
+        function mapReducer(mapperFn, combineFn) {
+          return function reducer(list, v) {
+            return combineFn(list, mapperFn(v))
+          }
+        }
+
+        function filterReducer(predicateFn, combineFn) {
+          return function reducer(list, v) {
+            if (predicateFn(v)) combineFn(list, v)
+            return list;
+          }
+        }
+
+/*
+    *** Deriving Transduction: Combiner & Currying ***    
+*/
+      // List combination is a task that can be abstracted away from all map and filter functions.
+      function listCombination(list, v) {
+        list.push(v);
+        return list;
+      }
+
+      // Functions now can be further specialized
+      var mapReducer = curry(2, mapReducer)
+      var filterReducer = curry(2, filterReducer)
+
+      // A transducer is a higher order reducer that produces a reducer if a reducer is passed to it!
+      var transducer = compose( // A reducer is going to be obtained from this compose application
+        mapReducer(add1),
+        filterReducer(isOdd)
+      )
+
+      // a reducer (listCombination in this case) is passed to transducer to obtain the composed reducer needed:
+      list
+      .reduce(transducer(listCombination), [])
+      .reduce( sum );
+
+/*
+    *** Deriving Transduction: Single Reduce ***
+      
+      ->Further refactoring - the intermediate step of producing an array that later gets reduce again can be avoided as follows:
+*/
+          list
+          .reduce( transducer(sum), 0 ) // Remember that "sum" is a reducer
+/*   
+        * Notice that before checking if a number is odd, it gets added 1 (add1(v1)), so all the odd values from the original list are the ones filtered out by isOdd
+        * Explicitly passing 0 as initial value to the reduce function ensures that the first value in the list passes through the transducer reducer before been added to the accumalator!
+        * Output of transducer(sum) is equal to:
+*/
+            function reducer(list, v1) {
+              return (function reducer(list2, v2) {
+                if (isOdd(v2)) return sum(list2, v2);
+                return list2;
+              })(list, add1(v1))
+            }
+/*          
+        * The reducer we end up passing to transducer (in this case it was sum) is what is going to decide the end result we get.
+*/      
+      // Utilities:
+
+        function add1(v) { return v + 1; }
+        function isOdd(v) { return v % 2 == 1; }
+        function sum(total, v) { return total + v; } // Note the shape of this function, it corresponds with one from a reducer!
+
+        function compose(...fns) {
+          return function composed(arg) {
+            return fns.reduceRight(function reducer(val, fn) {
+              return fn(val);
+            }, arg)
+          }
+        }
+
+        function curry(arity, fn) {
+          return (function curryWrapper(args) {
+            return function curried(nextArg) {
+              args = [...args, nextArg]
+              if (args.length >= arity) return fn(...args)
+              return curryWrapper(args)
+            }
+          })([])
+        }
+
+      // end of utilities
+/*
+### 11. Data Structures Operations  ###
+
+  *** DS Operations ***
+
+
+*/
+js
 /*
 
 */
+js
+/*
+
+*/
+js
+/*
+
+*/
+
