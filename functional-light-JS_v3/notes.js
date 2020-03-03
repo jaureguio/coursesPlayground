@@ -1526,43 +1526,240 @@
         function add1(v) { return v + 1; }
         function isOdd(v) { return v % 2 == 1; }
         function sum(total, v) { return total + v; } // Note the shape of this function, it corresponds with one from a reducer!
-
+        function mult(x,y) { return x * y; }
+        function listSum(list) { return list.reduce(sum,0)}
+        function listProduct(list) { return list.reduce(mult,1); }
+        
         function compose(...fns) {
           return function composed(arg) {
-            return fns.reduceRight(function reducer(val, fn) {
-              return fn(val);
+            return fns.reduceRight(function reducer(result, fn) {
+              return fn(result);
             }, arg)
+          }
+        }
+        
+        function pipe(...fns) {
+          return compose(...fns.reverse());
+        }
+        
+        function binary(fn) { // change the shape of the a function to be of a binary type (expecting two arguments)
+          return function two(arg1, arg2) {
+            return fn(arg1, arg2);
           }
         }
 
         function curry(arity, fn) {
-          return (function curryWrapper(args) {
+          return (function curryWrapper(prevArgs) {
             return function curried(nextArg) {
-              args = [...args, nextArg]
-              if (args.length >= arity) return fn(...args)
-              return curryWrapper(args)
-            }
-          })([])
+              var args = [...prevArgs, nextArg];
+              if (args.length >= arity) return fn(...args);
+              return curryWrapper(args);
+            };
+          })([]);
         }
-
+        
+        curry = curry(2,curry) // curry is curried by itself
       // end of utilities
 /*
 ### 11. Data Structures Operations  ###
 
   *** DS Operations ***
 
+    ->We want to generalize all the utility functions used so far (map, filter, reduce... replicated as methods on array/list structures) and adapt them to be used on any data structure.
 
 */
-js
+      // Mapping operation adapted to objects:
+      var obj = {
+        name: "Oscar",
+        email: "Oscarjaureguia@Gmail.com"
+      };
+
+      function mapObj(mapperFn, o) {
+        var newObj = {};
+        for (let key of Object.keys(o)) {
+          newObj[key] = mapperFn( o[key] );
+        }
+        return newObj;
+      }
+
+      mapObj(function lower(val) {
+        return val.toLowerCase();
+      }, obj); // { name: "oscar", email: "oscarjaureguia@gmail.com"}
+      
+      // Filtering operation adapted to objects:
+      var nums = {
+        first: [3,5,2,4,9,1,12,3],
+        second: [5,7,7,9,10,4,2],
+        third: [1,1,3,2]
+      };
+
+      function filterObj(predicateFn, o) {
+        var newObj = {};
+        for (let key of Object.keys(o)) {
+          if (predicateFn( o[key] )) newObj[key] = o[key]
+        }
+        return newObj;
+      }
+
+      
+      // Reduce operation adapted to objects:
+      function reduceObj(reducerFn, initialValue, o) {
+        var acc = initialValue;
+        for (let key of Object.keys(o)) {
+          acc = reducerFn(acc, o[key]);
+        }
+        return acc;
+      }
+      
+      // Implementation:
+
+      var filteredNums = filterObj(function(list) {
+        return isOdd(listSum(list)); // listSum implements a reducer that sum all the items from a list
+      }, nums);
+
+      var filteredNumsProducts = mapObj(function(list) {
+        return isOdd(listSum(list));
+      }, nums);
+
+      reduceObj(function (acc,v) {
+        return acc + v;
+      }, 0, filteredNumsProducts);
+      // 38886
 /*
+    *** Refactoring recognition ***
 
+      ->The following topics covered should be kept in mind whenever we have some impertive code in our code base:
+
+        * Argument manipulation (binary(...))
+        * Point-free style - Equational Reasoning
+        * Composition (compose(...), pipe(...))
+        * Currying
+        * List operations (reduce(...))
+      
+      ->Previous implementation can be refactor as follows:
 */
-js
+        var filteredNums = filterObj(compose(isOdd, listNum), nums); // composition implemented
+        var filteredNumsProducts = mapObj(listProduct, filteredNums); // Equational reasoning - the callback could be interchangeble with the listProduct (same shape)
+        reduceObj(sum, 0, filteredNumsProducts); // Equational reasoning - the reducer callback could be interchangeble with the sum function (same shape)
+        // 38886
+
+        // Additional refactoring recognized - the composition pattern of passing filteredNums into mapObj() and that result passed into reduceObj()
+        pipe( // pipe compose the functions passed from left to right, in contrast to compose()
+          curry(2)( filterObj(compose(isOdd,listSum)) ),
+          curry(2)( mapObj(listProduct) ),
+          curry(2)( reduceObj(sum,0) ), // Recall that curry has been already curried itself
+        )(nums);
+        // 38886
+
+        // Alternative functional refactoring - note that the arguments passed to pipe can be treated as a data structure itself:
+
+        [
+          curry(2)( filterObj(compose(isOdd, listSum)) ),
+          curry(2)( mapObj(listProduct) ), // curried function from above is passed into the one at this index
+          curry(2)( reduceObj(sum, 0) ) // function curried from above is passed into the curried one at this index, just as before
+        ].reduce(binary(pipe))(nums)
+        // Keep in mind that reduce passes 4 arguments to the provided reducer (acc, nextVal, idx, origArr), so we need to skip the usage of them limiting our pipe utility to receive
+        // Just two arguments, by means of the binary() utility function.
+        // We end up having a composed function waiting for a value to be passed into it (nums in this case) in order to execute its content
 /*
+  *** Monad Data Structures ***
+    
+    ->Data structures is not just about the values they hold but also about the behavior they create around those holded values.
 
+      * A monad is a wrapper around the value with a set of behaviors in it, that is going to make that value much easier to interoperate with another values in a specific kind of way.  
+      * One characteristic of a monad is that turns the single value it holds into a functor (any value where we can map an operation over it). If a monad has a map operation over it,
+        which indeed has, is a functor.
+    
+    ->"A monad is a patter for pairing data with a set of predictable behaviors that let it interact with other data + behavior pairings (monads)"
+        
+      * A set of formalized techniques for makind values easy to interact in a very specific and mathematical, provable way.
+
+  *** Just Monad ***
+
+    ->One of the most basic representation of a monad is a wrapper around a value, commonly called Just. This wrapper adds the basic interactively operators around the value wrapped 
+      into that every monad has. The value wrapped could be an object, an array, a primitive value, etc., what is important here is that from the perspective of a monad, the value
+      is a single discrete entity.
+
+      * Just like with arrays, everytime a map is performed on it we get another array, if a map is implemented over a monad, we will end up having another monad back.
 */
-js
+        function Just(val) {
+          return { map, chain, ap };
+
+          // *****************
+
+          function map(fn) {
+            return Just( fn(val) );
+          }
+
+          // aka: bind, flatMap
+          function chain(fn) { // fn must be a mapper function that returns another monad in order to respect "monatic" laws.
+            return fn( val );
+          } // This implementation is not strictly correct from a mathematical perspective, however it serves as an example method.
+
+          function ap(anotherMonad) {
+            return anotherMonad.map( val );
+          } // takes another monad's map implementation and calls it with the value of our current monad. This implies that our value should be a function (e.g. curried function) for this to not throw an error.
+        }
+
+        /* Example of interoperativity using monads */
+        var user1 = Just("Oscar");
+        var user2 = Just("Kat");
+
+        var tuple = curry(2, function tuple(x,y) {
+          return [x,y];
+        });
+
+        var users = user1.map(tuple).ap(user2);
+
+        // debug inspection using chain with an identity function (an identity function is not a monad-returning function, which violates one of the monatic laws):
+        function identity(v) { return v; } 
+        users.chain(identity); // ["Oscar","Kat"]
 /*
-
+  *** Maybe Monad ***
+    
+    ->A Maybe monad is one of the most commonly implemented types of monad used out in the wild. 
+      
+      * An example use case of a Maybe monad is when we would like to have some safe way of addressing a nested property from an object, without worrying of throwing an error if any of the intermediary properties
+        are missing. 
 */
+        function Nothing() {
+          return { map: Nothing, chain: Nothing, ap: Nothing }
+        } // this function resembles a no-opt function in terms of a monad
+
+        var Maybe = { Just, Nothing, of: Just };
+
+        function fromNullable(val) {
+          if (val == null) return Maybe.Nothing();
+          else return Maybe.of(val);
+        } // fromNullabable takes a value and decides which particular monad to return: Just or Nothing monad
+
+        var prop = curry(2, function prop(prop, obj) {
+          return fromNullable( obj[prop] );
+        }) // this prop utility, provided by any functional library, takes a property name and an object of which to pull the property from.
+
+        var someObj = { something: { else: { entirely: 42 } } };
+  
+        Maybe.of( someObj ) // Maybe.of() takes care of wrapping whatever value passed to it inside a monad 
+          .chain( prop( "something" ) )
+          .chain( prop( "else" ) )
+          .chain( prop( "entirely" ) )
+        // debug inspection (which remember violates a monatic law (a chain method over a monad should only receive a mapper function that returns another monad)):
+          .chain( identity ); // 42
+/*
+        * Calling the prop utility on some random object asking for a "xyz" property, we either are going to get back a Nothing monad or a Just monad that's wrapping the value of the property we asked.
+          With this utility we can now make a safe property chaining access off of someObj.
+
+          - Notice that the prop utility is a curried function waiting to be called twice.
+
+        * The chain method takes the function return from the first call from prop and calls it with the value of the monad over which it is been called (Maybe.of( someObj ) in the first case) 
+
+          - The second call to the prop utility is executed, which then will return either another Just monad if accessing the property is succesfully or a Nothing monad if the property access fails returning null.
+          - Regardless of which of the two monads we get back, another chain method call is performed. This is possible because we know that the previous call of chain is going to return a monad to us either way (as long
+            as it is behaving under the monatic laws, we can keep chaining calls).
+          - As soon as a Nothing monad is return from a chain method call, this monad essentially short-circuits the rest of the chained calls converting them in a no-opt.
+    
+    ->There are many kinds of monads: Just, Nothing, Maybe, Either, IO, etc.
+          
+*/
+
 
