@@ -419,8 +419,8 @@
     ->Rebase vs Merge:
 
         copy of                                     new merge
-        original----->  ( COPY )<= new_feature      commit with---->  ( MERGE )<= new_feature
-        commit             |                       2 parents             |
+        original-----> ( COPY )<= new_feature       commit with---->  ( MERGE )<= new_feature
+        commit            |                         2 parents            |
                           |                                    __________|
                           v                                   |          v
                       ( 25b38 )<= master                      |      ( 25b38 )<= master
@@ -432,7 +432,7 @@
 
                 * git rebase master                              * git merge master (or should it be new_featuer?)
 
-    ->Powe of rebasing is that we can basically replay commits. 
+    ->Power of rebasing is that we can basically replay commits. 
 
       * Commits can be edited, removed, combined, re-ordered and inserted before they're "replayed" on top of the new HEAD.
     
@@ -525,3 +525,290 @@
       * It's easy to fix previous mistakes in code.
       * We can keep our Git history neat and clean.
 
+  *** Rebase Exercise ***
+
+    ->We want to modify the message from a commit and merge a commit into another one in the same operation. We currently have two branches:
+
+      <>  git checkout new_feature
+      <>  git log -n 3 --oneline
+
+        > 5131f83 (HEAD -> feature_branch) Adding another new feature
+        > 8e328cf Adding hi.txt
+        > 199fe30 (master) bye.txt
+        > (END)
+
+      <>  git rebase -i HEAD~2 (rebase will be performed base on the commit 199fe30)
+
+        
+        >  reword 8e328cf Adding hi.txt
+        >  squash 5131f83 Adding another new feature
+
+      * Default code editor fot Git will open several times depending on the commands specified.
+      * Note that the order of appearance for commits involved in the rebase operation is the opposite of what we used to see when logging commits.
+
+    ->The result of this rebasing is as follows:
+
+      <>  git log -n 2 --oneline
+
+        > 800d491 (HEAD -> feature_branch) "Adding two new features here"  <----- This message is specified by us when the code editor opens. This commit represents the combination of the previous commits 5131f83 and 8e328cf.
+        > 199fe30 (master) bye.txt
+        > (END)
+
+### 09. Forks, Remote Repos ###
+
+  *** Distributed Version Control ***
+
+    ->The efficiency with which Git stores data (compression, used algorithms), allows us to store the complete repository with all its history in our local machine; a local network is not needed for us to be able to work on a
+      given repository. Because of this, Git works using a distributed model, which allow multiple developers to work on local copies of a repository.
+
+    ->Github vs Git:
+
+      * Git: Open source version control software.
+
+      * Github: repository hosting, browse code, issues, pull request, forks, etc.
+
+  *** Remotes ***
+
+    ->A remote is a Git repository stored elsewhere - on the web, in Github, etc.
+
+      * origin is the default name Git gives to the server you cloned from.
+
+      * Cloning a remote repository from a URL will fetch the whole repository, and make a local copy in our .git folder.
+
+        <>  git clone git@github.com:oscarJDev/projectA.git (or git clone https://github.com/OscarJDev/projectA.git)
+        
+        - When cloning someone else's repository we can only pull changes from it but no push changes to it.
+    
+      * Vieweing remotes:
+
+        <>  git remote -v
+
+      * We may have different privileges for a remote.
+      
+        - Read/Write for some, Read Only for others.
+
+  *** Fork ***
+
+    ->A fork is a copy of a repository that's stored in our local GitHub account.
+
+      * We can clone our fork to our local computer.
+      * Previous step allows us to push changes to the copy we have in our GitHub account.
+
+    ->Merging changes to original project from a fork is made through a pull request (PR)
+
+          ------>( fork on our GitHub account ) --- PR ( Pull request ) ---> ( Original project on a different GitHub account )
+          |
+         push
+          |
+          '------(clone of fork)
+
+    ->While working on our fork, other changes are getting merged into the source repository. In order to stay up to date, we should set up an "upstream".
+
+      * The upstream repository is the base repository we created the fork from.
+      * This isn't set up by default, we need to set it up manually.
+      * By adding an upstream remote, we can pull down changes that have been added to the original repository after we forked.
+
+        <>  git remote add upstream https://github.com/ORIG_OWNER/repo.git
+
+  *** Triangular Workflow ***
+
+    ->The common workflow when contributing to open source projects:
+
+             ( fork ) --- Pull request ---> ( Original project on a different GitHub account )
+                ^                            /
+                 \                          / 
+                 Push                 Pull or Fetch
+                   \                      /
+                    \                    v
+                       ( clone of fork )
+
+  *** Tracking Branches ***
+
+    ->Track a branch to tie it to an upstream branch.
+
+      * Doing this allows us to use push/pull without arguments.
+
+    ->To checkout a remote branch, with tracking:
+
+      <>  git checkout -t origin/feature
+    
+    ->Tell git which branch to track the first time we push:
+
+      <>  git push -u origin feature
+
+    ->We can log out the differences between local branches and their respective tracking branches as follows:
+
+      <>  git branch -vv
+
+  *** Fetch ***
+
+    ->Git fetch is important for keeping our local repository up to date with a remote.
+    
+    ->It pulls down all the hanges that happened on the server.
+
+    ->It doesn't change our local repository, just the local copies of the remote in our local machine.
+
+  *** Pull ***
+
+    ->Pulling will pull down the changes from the remote repository to our local repository, and merging them wit a local branch.
+
+    ->Under the hood:
+
+      - git pull = git fetch && git merge
+
+    ->If changes happened upstream, Git will create a merge commit, otherwise it will fats-forward.
+
+  *** Push ***
+
+    ->Pushing sends our changes to the remote repository.
+
+    ->Git only allows us to push if out changes won't cause a conflict.
+
+      * In cases like this, we have to pull first, update our local copy and then we will be able to push.
+
+    ->To see commits which haven't been pushed upstream yet, we can run:
+
+      <>  git cherry -v
+
+  *** Git Pull --rebase ***
+
+    ->Git pull --rebase will fetch, update our local branch to copy the upstream branch, then replay any commits we made via rebase.
+
+    ->Another bonus of this is when we open a PR, there will be no unsightly merge commits.
+
+      * Example case: git pull vs git pull --rebase
+
+                                          ----() origin/master
+                                          |
+                                          v
+                            ()<---()<---()<-
+                                            \
+                                             '---()<---()<---() feature_branch
+
+        - using "git pull origin/master":
+
+                         origin/master
+                          ----()<---------------------
+                         |                           |
+                         v                           |
+             ()<---()<---()<-                 extra merge commit
+                             \                       |
+                              '---()<---()<---()<---()
+                                                feature_branch
+
+        - using "git pull origin/master --rebase":
+
+             ()<---()<---()<---()<---0<---0<---0    (no extra merge commit)
+                                            feature_branch
+
+  *** Tags ***
+
+    ->Git doesn't automatically push local tags to a remote repository.
+
+    ->To push tags:
+
+      <>  git push <tagname>
+      <>  git push --tags
+
+  *** Contributing to Open Source Projects - Pull Requests ***
+
+    ->Before opening a PR:
+
+      * Keep commit history clean and neat. Rebase if needed.
+      * Run project tests on our code.
+      * Pull in Upstream changes (preferably via rebase to avoid merge commits).
+      * Check for a Contributing (.md/.txt) in the project root.
+    
+    ->After opening a PR:
+
+      * Explain changes thoroughly in the pull request body.
+      * Link to any open issues that our pull request might fix.
+      * Check back for comments from the maintainers.
+
+    ->Advice when contributing on other projects:
+
+      * Encourage developers to work on their own forks of a repository.
+      * Mistakes are less likely to happen if no one is pushing direclty to the "source of truth" for our codebase.
+      * We can rebase and force push freely to our own origin, as long as no one else is cloning our branch.
+
+  *** Pushing/Merging Changes to a Remote (or Upstream) ***
+
+    ->Rule of thumb:
+
+      * Rebase commits on our local feature branch.
+      * Merge feature branches back to origin (or upstream).
+    
+    ->When accepting a PR:
+
+      * Squash and merge or rebase with care.
+      * We will lose contect about the work on the feature branch when squashing or rebasing. Merging is preferable in order to avoid this issue.
+      * It'll make it harder to debug when issues arise in the future.
+
+### 10. Danger Zone ###
+
+  *** Local Destructive Operations ***
+
+    <>  git checkout -- <file>
+
+      - If the file is present in the staging area, it'll be overwritten.
+
+    <>  git reset --hard
+      
+      - Will overwrite changes that are staged and in the working area.
+
+    ->Unless changes are stashed, there's no way of getting them back.
+
+    ->Tip: use "git stash --include-untracked" to include working area changes in our stash.
+
+  *** Remote Destructive Operations - Rewriting History ***
+
+    ->There are many operations that can rewrite history:
+
+      * rebase
+      * amend
+      * reset
+    
+    ->If our code is hosted or shared, never run "git push -f" (the -f flag stands for force).
+
+  *** Recover Lost Work ***
+
+    ->Use ORIG_HEAD to undo a merge:
+
+      <>  git reset --merge ORIG_HEAD
+
+        * The --merge flag allows us to preserve any uncommitted changes.
+
+                         ---()<-----()<-------
+                        /                     \
+                       /                       \
+                      v                         |
+          ()<---()<---()<---()<---()<---()<----() <<< merge commit    
+                                         ^      ^
+                                         |      |
+                                     ORIG_HEAD Head
+
+          - After running the command, Head will point to ORIG_HEAD
+
+    ->Check for repository copies: GitHub or with a coworker
+  
+  *** Using Git Reflog and "@" Syntax ***
+
+    ->By default, Git keeps commits around for about 2 weeks.
+
+    ->If we need to go back in time, and find a commit that's no longer referenced, we can look in the reflog.
+
+    ->Syntax of reflog is different:
+
+      <>  HEAD@{2} means "the value of HEAD 2 moves ago"
+
+### 11. Continous Integration ###
+
+  ->Merging smaller commits frequently, instead of waiting until a project is "done" and doing one big merge.
+
+  ->This means that features can be released quicker.
+
+  ->CI only works well when there are tests that ensure that new commits didn't "break the build"
+
+  ->It's even possible to perform a deployment at the end of a CI build.
+
+    ( Commit )--->( Test )--->( Merge )--->[optional]--->( Deploy )
