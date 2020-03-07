@@ -219,6 +219,15 @@ my_list.**extend(item)** | extends a list with another item (commonly another li
 
     names[5] = "Fiona" # IndexError: list assignment index out of range
   ```
+- We can also access more than one item at a time in a list, as follows:
+
+  ```python
+    my_list = ["h", "e", "l", "l", "o"]
+    
+    my_list[0:3] # ['h','e','l'] the end index is not inclusive
+    my_list[:3] # ['h','e','l'] if no initial index provided, 0 is used by default
+    my_list[-1] # ['o'] negative values traverse the list in reverse order
+  ```
 
 ### Removing Items from a List
 
@@ -278,7 +287,7 @@ TYPE | Tuple
 **common methods**     | Can't add or remove from tuples.
 **in-place sortable?** | No
 
-- It is important to point out that in a tuple, the usage of "," is more determining with regard to its creation than the usage of (). For example:
+- It is important to point out that in a tuple, the usage of "," is more crucial with regard to its creation than the usage of (). For example:
 
   ```python
     my_typle = 1,2,3 
@@ -291,4 +300,169 @@ TYPE | Tuple
   ```
 ## 06. Sets
 
-#### 
+Sets are datatype that allows us to store other immutable types in an unsorted way. An item can only be contained in a set once, no duplicates allowed.
+
+  - Very fast membershiop testing along with being able to use powerful ser operations, like union, difference and intersection.
+  - Sets are identified by curly brackets {}. An empty set can only be created with the set() method ({} represents an empty dict). Sets containing data can be created with curly brackets.
+  - Set values are stored by hash indices (Python has a built-in hash() method to obtain the hash value of an item), thats why they cannot be duplicated in the same set. Additionally, sets cannot contain mutable data like lists for example (hashing will be different if the list is modified)
+
+**set cheat sheet**
+
+type | set
+:-----:|-----
+**use**                | used for storing immutable data types uniquely. easy to compare the items in sets
+**creation**           | set() for an empty set ({} makes an empty dict) and {1,2,3} for a set with items in it
+**search methods**     | item in my_set
+**search speed**     | searching for an item in alrge set is very fast.
+**common methods**     | my_set.add(item), my_set.discard(item) to remove the item if it's present, my_set.update(other_set)
+**mutable?** | yes. can add to or remove from sets.
+**in-place sortable?** | no, because items aren't ordered.
+
+#### Adding, Removing & Updating
+
+  - The .add(item) method on sets is used to add data to a given set.
+  - Sets have 2 methods to delete data from them. .remove(item) will delete a given item from a set, throwing an error if the value is not found. On the other hand, we can use .discard(item) on a set to accomplish the same but without an error in case the item is not found.
+  - We can combine a set with a data sequence (like another set or a string) using the .update(item) method on sets.
+
+#### Combining, Comparing and Contrasting 
+
+Method Operation | Symbol Operation | Result
+:-----:|:-----:|-----
+s.union(t) | s \| t | Creates a new set with all the items from both s and t.
+s.intersection(t) | s & t | Creates a new set containing only items that are both in s and in t
+s. difference(t) | s ^ t | Creates a new set with items in s but not in t
+
+## 07. Dictionaries
+
+Dictionaries are useful types that allow us to store our data in key, value pairs. They themselves are mutable, but dictionary keys can only be mutable types (apply the same criteria as with sets and the hashing of its values).
+
+  - We use them when we want to be able to quickly access additional data associated with a particular key. A great practical application for dictionaries is memoization (storing results from an expensive computation)
+  - Looking for a key in a large dict is extremely fast. Unlike list, we don't have to check every item for a match.
+  - We can create a dictionary using the built-in method dict() or using {} containing key value pairs.
+  - We can use the .get(item, defaultValue) method on dicts to retrieve a value by key in it. If the value is not found, nothing is going to be return (no error either). The optional defaultValue is used to return it in case the key is not found.
+
+**dict cheat sheet**
+
+type | dict
+:-----:|-----
+**use** | used for storing data in key, value pairs. Keys used must be immutable data types.
+**creation** | {} or dict() for an empty dict. {1: "one", 2: "two", "three": 3} for a dict with items.
+**search methods** | key in my_dict
+**search speed** | searching for an key in large dict is fast.
+**common methods** | my_dict.[key] to get the value by key (throw error if not found). my_dict.get(item) is also used to retrieve value by key (this method wont error out if key not found). my_dict.items() for all key, value pairs. my_dict.keys() for all keys, my_dict.values() for all values.
+**mutable?** | Yes. Can add to or remove from dicts.
+**order preserved** | Sort of. As of Python 3.6 a dict is sorted by insertion order. Items can't be accessed by index, only by key.
+
+#### Adding, Removing & Accessing Keys or Values
+
+  - We can add/overwrite values in a dict providing a key in square brackets and the value after the equal sign:
+
+    ```python
+      nums = {"one": 1, "two": 2, "three": 3}
+      nums["four"] = 4 # {"one": 1, "two": 2, "three": 3, "four": 4}
+    ``` 
+  - The `in` keyword can be use to assess if a key is in a dict.
+  - Two dicts can be combined with `my_dict.update(another_dict)`
+
+#### Mutability Review
+
+*Simple Types*
+
+  type | use | mutable?
+  :---:|---|:---:
+  int, float, decimal | store numbers | no
+  str | store strings | no
+  bool | store True or False | no
+
+
+*Container Types*  container type | use | mutable?
+  :---:|---|:---:
+
+  set | unordered group of mutable items. Useful for set operations (membership, intersection, difference, etc.) | yes
+  list | ordered groups of items, accessible by position | yes
+  tuple | contain ordered groups of items in an immutable collection | no
+  dict | contains key value pairs | yes
+
+## 08. Boolean Logic
+
+Evaluating expression to be True or False will help us control the flow of our program.
+
+  **Boolean cheat sheet**
+
+  type | truthiness
+  :-----:|-----
+  int | 0 is False, all other numbers are True (including negative)
+  containers - *list, tuple, set, dict* | empty container evaluates to False, container with items evaluates to True
+  None | False
+
+  - We can use the built-in method bool(item) to check the truthiness of an item:
+
+    ```python
+      type(True) # <class 'bool'>
+      bool(True) # True
+      bool(0) # False
+      bool([]) # False
+      bool([1,2]) # True
+      bool(set()) # False
+      bool({1,2}) # True
+    ```
+
+#### Comparisons
+
+>It does not make sense to compare items of different types in Python. We could define our own objects, specifying how we can compare them with each other, but comparing built-in types does not make sense to compare them.
+
+  ```python
+    3 < 5 # True
+    "T" < "t" # True uppercase letters are lower-valued in ASCII
+    "a" < "b" # True
+    "bat" < "cat" # True
+    [1,2,3] == [1,2,3] # True
+
+    a = [1,2,3]
+    b = [1,2,3]
+    a != b # False
+
+    # To assess equality, use == or !=
+    # To assess identity use "is" keyword
+
+    x = None
+    x is None # True
+
+    a is b # False variables don't point to the same place in memory
+    a == b # True
+
+    a = None
+    a is None # True
+    a is not None # False
+  ```
+
+#### and, or & not
+
+How can we compare different values with each other?
+
+  *and, or, not Cheat Sheet*
+
+  Operator | Result
+  :-----:|-----
+   a or b | if a is False, then b, else a
+  a and b | if a is False, the a, else b
+  not a | if a is False, the True, else False
+
+    ```python
+      [1] and [2] # [2]
+      [] and [2] # []
+
+      [] or [2] # [2]
+      [5] or [2] # [5]
+
+      a = False
+      b = True
+      a and b # False
+
+      [] and {} # []
+      [] and {1} # []
+
+      0 or 1 # 1
+
+      "Hello" and None # nothing (None) return
+    ```
