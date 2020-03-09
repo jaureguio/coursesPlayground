@@ -472,45 +472,321 @@ Take the following example:
 
 This pattern involves dividing a (larger) set of data (usually an array, string or even a linked list or tree) into smaller chunks and then repeating the process with a subset of data. This pattern can tremendously decrease time complexity.
 
-  - Once again, this pattern relies on the structure on which it's going to be used been sorted on some way. 
+  - Once again, this pattern relies on the structure on which it's going to be used to be sorted on some way. 
 
 Take the following example:
 
   - Given a sorted array of integers, write a function called "search", that accepts a value and returns the index where the value passed to the function is located. If the value is not found, return -1.
 
-    ```javascript
-      // Naive implementation where the array is potentially traversed entirely.
-      function search(arr, val) {
-        for (let i = 0; i < arr.length; i++) {
-          if (arr[i] === val) {
-            return i;
-          }
+  ```javascript
+    // Naive implementation where the array is potentially traversed entirely.
+    function search(arr, val) {
+      for (let i = 0; i < arr.length; i++) {
+        if (arr[i] === val) {
+          return i;
         }
-        return -1;
       }
+      return -1;
+    }
 
-      // Refactoring applying Divide and Conquer pattern:
-      function search(arr, val) {
-        var min = 0;
-        var max = arr.length -1;
-        while (min <= max) {
-          let middle = Math.floor((min + max) / 2);
-          let currentElement = arr[middle];
+    // Refactoring applying Divide and Conquer pattern:
+    function search(arr, val) {
+      var min = 0;
+      var max = arr.length -1;
+      while (min <= max) {
+        let middle = Math.floor((min + max) / 2);
+        let currentElement = arr[middle];
 
-          if (currentElement < val) {
-            min = middle + 1;
-          }
-          else if (currentElement > val) {
-            max = middle - 1;
-          }
-          else {
-            return middle;
-          }
+        if (currentElement < val) {
+          min = middle + 1;
         }
-        return -1;
+        else if (currentElement > val) {
+          max = middle - 1;
+        }
+        else {
+          return middle;
+        }
       }
+      return -1;
+    }
 
-      search([2,3,5,7,7,9,14,15,16,17,18,21,22,23,25,29,32,33,34,35], 18) // 10
-      search([2,3,5,7,7,9,14,15,16,17,18,21,22,23,25,29,32,33,34,35], 19) // -1
-    ```
+    search([2,3,5,7,7,9,14,15,16,17,18,21,22,23,25,29,32,33,34,35], 18) // 10
+    search([2,3,5,7,7,9,14,15,16,17,18,21,22,23,25,29,32,33,34,35], 19) // -1
+  ```
     - The refactored solution, implementing Divide and Conquer, takes both front and back values of the array initially, combines them and checks if a given condition is fulfilled. If the latter is not fulfilled, depending on the result, a subset of the array is discarded and the the process is repeated on the subset of the array kept until there are no more values to check. 
+
+## 10. Searching Algorithms
+
+#### Linear Search
+
+Given an array (a data structure), the simplest way to search for a value is to look at every element in the array and check if it's the value we want.
+
+  - JavaScript has many different search methods on arrays that are basically doing linear search:
+    
+    - indexOf
+    - includes
+    - find
+    - findIndex
+
+  *Pseudocode Implementation*
+
+    - The function accepts an array and a value.
+    - Loop through the array and check if the current array element is equal to the value.
+    - If it is, return the index at which the element is found.
+    - If the value is never found, return -1.
+
+  ```javascript
+    function linearSearch(arr, val) {
+      for (let i = 0; i < arr.length; i++) {
+        if(arr[i] === val) return i;
+      }
+      return -1;
+    }
+  ```
+
+  **Linear Search Big O:**
+
+Best | Average | Worst
+:----:|:-------:|:----:
+O(1) | O(n)    | O(n)
+
+#### Binary Search
+
+Binary search is much faster form of search. Rather than eliminating one element at a time, we can eliminate half of the remaining elements at a time. Binary Search works by the fact that the array (data structure) must be sorted, so after checking some condition base on this sorting, some set of elements ("remaining elements") can be discarded.
+
+  - Divide and conquer is what's implemented in this search algorithm approach. 
+
+  *Binary Search Pseudocode*
+
+    - The function accepts a sorted array and a value.
+    - Create a left and right pointer at the beginning and end of the array, respectively.
+    - While the left pointer comes before the right pointer:
+      - Create a pointer in the middle.
+      - If we find the value we want, return the index.
+      - If the value is too small, move the left pointer up.
+      - If the value is too large, move the right pointer down.
+    - If we never find the value, return -1.
+
+  ```javascript
+    function binarySearch(arr, elem) {
+      var start = 0;
+      var end = arr.length - 1;
+      var middle = Math.floor((start + end) / 2);
+      while(arr[middle] !== elem && start <= end) {
+        if(el*em < arr[middle]) end = middle - 1;
+        else start = middle + 1;
+        middle = Math.floor((start + end) / 2);
+      }
+      return arr[middle] === elem ? middle : -1;
+    }
+  ```
+
+  *Binary Search Big O:*
+
+Best | Average | Worst
+:----:|:------:|:----:
+O(1) | O(log(n)) | O(log(n))
+
+  \* O(log(n)) is because we can determine the amount of steps required to traverse all items in an array. Log<sub>2</sub> #elements = steps
+
+      - 16 elements requires 4 traverse steps.
+      - 32 elements requires 5 traverse steps (to add another "step" we need to double the number of elements)
+      - and so on...
+
+#### Naive String Search Implementation
+
+  - Loop over the longer string.
+  - Loop over the shorter string.
+  - If the characters don't match, break out of the inner loop.
+  - If the characters do match, keep going.
+  - If we complete the inner loop, thus finding a match, increment the count of matches.  
+  - Return the count.
+
+  ```javascript
+    function naiveSearch(sentence, match) {
+      var count = 0;
+      for(let i = 0; i < sentence.length; i++) {
+        for(let j = 0; j < match.lenght; j++) {
+          if(match[j] !== sentence[i+j]) break;
+          if(j === match.length - 1) count++;
+        }
+      }
+      return count;
+    }
+
+    naiveSearch("lorie loled", "pop");
+  ```
+
+## 11. Bubble Sort
+
+#### Elementary Sorting Algorithms
+
+Sorting is the process of rearranging the items in a collection (e.g. an array) so that the items are in some kind of order.
+
+Examples:
+  - Sorting numbers from smallest to largest.
+  - Sorting names alphabetically.
+  - Sorting movies based on release year.
+  - Sorting movies based on revenue.
+
+Why do we need to learn this?
+
+  - Sorting is an incredibly common task, so it's good to know how it works.
+  - There are many different ways to sort things, and different techniques have their own advantages and disadvantages.
+
+#### JavaScript Built-in Sorting
+
+  - The built-in sort method accepts an optional comparator function.
+  - You can use this comparator function to tell JS how we want it to sort.
+  - The comparator looks at pairs of elements (a and b), determines their sort order based on the return value.
+    - If it returns a negative number, *a* should come before *b*.
+    - If it returns a positive number, *a* should come after *b*.
+    - I it returns 0, *a* and *b* are the same as far as the sort is concerned.
+
+#### Bubble Sort
+
+A sorting algorithm where the largest values bubble up to the top. This algorithm swap values, if needed, after comparing pairs of items, starting from the beginning of the array.
+
+  *Bubble Sort Pseudocode*
+
+    - Start Looping the array from the end towards the beginning (with a variable *i*).
+    - Start an inner loop traversing the array (with a variable *j*) from start to *i-1*.
+    - If arr[j] is greater than arr[j+1], swap those two values.
+    - Return the sorted array. 
+
+  ```javascript
+    function bubbleSort(arr) {
+      for(let i = arr.length; i > 0; i--) {
+      for(let j = 0; j < i - 1; i++) {
+        if(arr[j] > arr[j+i]) [arr[j], arr[j+i]] = [arr[j+1], arr[j]];
+      }
+      }
+    }
+  ```
+
+  *Bubble Sort Optimization*
+    
+  We could optimize this code for cases when handling arrays with certain degree of sorting. The algorithm should be able to short-circuit its implementation (avoiding unnecesary iterations over the array) when no swapping occours.
+
+  ```javascript
+    function bubbleSort(arr) {
+      var noSwaps;
+      for(let i = arr.length; i > 0; i--) {
+        noSwaps = true; // Optimization
+        for(let j = 0; j < i - 1; i++) {
+          if(arr[j] > arr[j+i]) {
+            [arr[j], arr[j+i]] = [arr[j+1], arr[j]];
+            noSwaps = false; // Optimization
+          }
+        }
+        if (noSwaps) break; // Optimization
+      }
+      return arr;
+    }
+  ```
+  *Bubble sort Big O:*
+
+Best | Average | Worst
+:----:|:------:|:----:
+O(n) | O(n<sup>2</sup>) | O(n<sup>2</sup>)
+
+\* Best case to use Bubble sort algorithm is when dealing with an array nearly sorted.
+
+## 12. Selection Sort
+
+Similar to bubble sort, but instead of first placing large value into sorted position, it places small values into sorted position.
+
+  *Selection Sort Pseudocode*
+
+    - Store the first element as the smallest value we've seen so far.
+    - Compare this item to the next item in the array until we find a smaller number.
+    - If a smaller number is found, designate that smaller number to be the new "minimum" and continue until the end of the array.
+    - If the "minimum" is not the value (index) we initially began with, swap the two values.
+    - Repeat this with the next element until the array is sorted.
+
+  ```javascript
+    function selectionSort(arr) {
+      for(let i = 0; i < arr.length; i++) {
+        let lowest = i;
+        for(let j = i+1; j < arr.length; j++) {
+          if(arr[j] < arr[lowest]) {
+            lowest = j;
+          }
+        }
+        [arr[i], arr[lowest]] = [arr[lowest], arr[i]] 
+      }
+      return arr;
+    }
+  ```
+  *Selection sort Big O:*
+
+Best | Average | Worst
+:----:|:------:|:----:
+O(n<sup>2</sup>) | O(n<sup>2</sup>) | O(n<sup>2</sup>)
+
+\* Where selection sort performs better than, let say bubble sort, is only in one scenario; if we need to minimize the number of swaps per iteration over the complete array (bubble sort swaps values potentially multiple times over each complete array iteration).
+
+## 13. Insertion Sort
+
+Builds up the sort by gradually creating a larger left half which is always sorted.
+
+  **Insertion Sort Pseudocode**
+
+    - Start by picking the second element in the array.
+    - Now compare the second element with the one before it and swap if necessary.
+    - Continue to the next element and if it is in the incorrect position order, iterate through the sorted array portion (i.e. the left side) to place the element in the correct place.
+    - Repeat until the array is sorted.
+
+  ```javascript
+    function insertionSort(arr) {
+      for(let i=1; i < arr.length; i++) {
+        let currentVal = arr[i];
+        for(let j = i - 1; j >= 0 && arr[j] > currentVal; j--) {
+          arr[j+1] = arr[j];
+        }
+        arr[j+1] = currentVal;
+      }
+      return arr;
+    }
+  ```
+  *Insertion sort Big O:*
+
+Best | Average | Worst
+:----:|:------:|:----:
+O(n) | O(n<sup>2</sup>) | O(n<sup>2</sup>)
+
+\* Similar to bubble sort, when dealing with an array with certain degree of sorting, the algorithm just needs to perform roughly the outer looping over the array, this is because when running the inner loop, the condition `arr[i] > currentVal` wont be met in general due to the sorting status of the given array.
+
+## 14. Comparing Bubble, Selection, and Insertion Sort
+
+- All of these covered algorithms are often called "quadratic algorithms" because of their Big O time complexity (whereas in cases when handling nearly sorted arrays, bubble and insertion sort can show O(n), remember that Big O focuses in the worst case scenario).
+
+*Big O of Sorting Algorithms*
+
+Algorithm | Time Complexity (Best) | Time Complexity (Average) | Time Complexity (Worst) | Space Complexity
+:----:|:----:|:----:|:----:|:----:
+Bubble Sort | O(n) | O(n<sup>2</sup>) | O(n<sup>2</sup>) | O(1)
+Insertion Sort | O(n) | O(n<sup>2</sup>) | O(n<sup>2</sup>) | O(1)
+Selection Sort | O(n<sup>2</sup>) | O(n<sup>2</sup>) | O(n<sup>2</sup>) | O(1)
+
+  \* The space complexity is constant because this algorithms perform in place, meaning that nothing is been created when executed (no new array, no new variable holding items from array per iteration). Faster algorithms doesn't have space complexity like these ones.
+
+  \* Insertion sort performs very well when new data is been added to an already sorted array; insertion sort just requires to perform a single pass through the array to figure out where it should be placed.
+
+#### Recap
+
+  - Sorting is *fundamental*
+  - Bubble, selection and insertion sort are all roughly equivalent.
+  - All have average time complexities that are quadratic.
+  - This algorithms actually can performs better than more complex ones when handling smaller sets of data.
+  - We can do better, but complex algorithms are required.
+
+## 15. Merge Sort
+
+#### Intermediate Sorting Algorithms
+
+
+
+## 16. Quick Sort
+
+## 17. Radix Sort
