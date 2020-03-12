@@ -657,9 +657,9 @@ A sorting algorithm where the largest values bubble up to the top. This algorith
   ```javascript
     function bubbleSort(arr) {
       for(let i = arr.length; i > 0; i--) {
-      for(let j = 0; j < i - 1; i++) {
-        if(arr[j] > arr[j+i]) [arr[j], arr[j+i]] = [arr[j+1], arr[j]];
-      }
+        for(let j = 0; j < i - 1; i++) {
+          if(arr[j] > arr[j+i]) [arr[j], arr[j+i]] = [arr[j+1], arr[j]];
+        }
       }
     }
   ```
@@ -694,7 +694,7 @@ O(n) | O(n<sup>2</sup>) | O(n<sup>2</sup>)
 
 ## 12. Selection Sort
 
-Similar to bubble sort, but instead of first placing large value into sorted position, it places small values into sorted position.
+Similar to bubble sort, but instead of start placing large value into sorted position, it places small values into sorted position.
 
   *Selection Sort Pseudocode*
 
@@ -744,7 +744,7 @@ Builds up the sort by gradually creating a larger left half which is always sort
         for(let j = i - 1; j >= 0 && arr[j] > currentVal; j--) {
           arr[j+1] = arr[j];
         }
-        arr[j+1] = currentVal;
+        arr[i] = currentVal;
       }
       return arr;
     }
@@ -783,10 +783,236 @@ Selection Sort | O(n<sup>2</sup>) | O(n<sup>2</sup>) | O(n<sup>2</sup>) | O(1)
 
 ## 15. Merge Sort
 
-#### Intermediate Sorting Algorithms
+Very well known sorting algorithm created back in 1948 by a computer scientist and mathematician named Jonathan Von Neumann.
 
+  - It's a combination of various things: splitting, merging and sorting.
+  - Works by decomposing an array into smaller arrays of 0 or 1 elements, then building up a newly sorted array.
+  - **_Exploits the fact that arrays of 0 or 1 element are always sorted_**
 
+#### Merge Helper
+
+- In order to implement merge sort, it's useful to first implement a function responsible for merging two sorted arrays.
+- Given two arrays which are sorted, this helper function should create a new array which is also sorted, and consists of all of the elements in the two input arrays.
+- This function should run in O(n + m) time and O(n + m) space and should not modify the parameters passed to it.
+
+  *Merging arrays pseudocode*
+
+    - Create an empty array, take a look at the smallest values in each input array.
+    - While there are still values we haven't looked at:
+      - If the value in the first array is smaller than the value in the second array, push the value in the first array into our results and move on to the next value in the first array.
+      - If the value in the first array is larger than the value in the second array, push the value in the second array into our results and move on to the next value in the second array.
+      - Once we exhaust one array, push in the remaining values from the other array.
+
+  ```javascript
+    function merge(arr1, arr2) {
+      let results = [];
+      let i = 0;
+      let j = 0;
+      while(i < arr1.length && j < arr2.length) {
+        if(arr2[j] > arr1[i]) {
+          results.push(arr1[i]);
+          i++;
+        } else {
+          results.push(arr2[j]);
+          j++;
+        }
+      }
+      while (i < arr1.length) {
+        results.push(arr1[i]);
+        i++
+      }
+      while (j < arr2.length) {
+        results.push(arr2[j]);
+        j++
+      }
+      return results;
+    }
+  ```
+#### Merge Sort Implementation
+
+  *Merge Sort Pseudocode*
+
+    - Break up the array into halves until we have arrays that are empty or have one element.
+    - Once we have smaller sorted arrays (of one element), merge those arrays with other sorted arrays until we are back at the full length of the array.
+    - Once the array has been merged back together, return the merged (and sorted) array.
+
+  ```javascript
+    function mergeSort(arr) {
+      if (arr.length <= 1) return arr;
+      const midIdx = Math.floor((arr.length)/2);
+      let left = mergeSort(arr.slice(0, midIdx));
+      let right = mergeSort(arr.slice(midIdx));
+      return merge(left, right);
+    }
+  ```
+
+#### Merge Sort Big O Complexity
+
+  Time Complexity (Best) | Time Complexity (Average) | Time Complexity (Worst) | Space Complexity
+  :----:|:----:|:----:|:----:|
+  O(nlog(n)) | O(nlog(n)) | O(nlog(n)) | O(n)
 
 ## 16. Quick Sort
 
+- Like merge sort, exploits the fact that arrays of 0 or 1 element are always sorted.
+- Works by selecting one element (called the "pivot") and finding the index where the pivot should end up in the sorted array.
+- Once the pivot is positioned appropiately, quick sort can be applied on either side of the pivot.
+
+#### Pivot Helper
+
+- In order to implement quick sort, it's useful to first implement a function responsible or arranging elements in an array on either side of a pivot element.
+- Given an array, this helper function should designate an element as the pivot. 
+- It should then rearrange elements in the array so that all values less than the pivot are moved to the left of the pivot, and all values greater than the pivot are moved to the right of it.
+- The order of elements on either side of the pivot doesn't matter.
+- The helper should do this in place, that is, it should not create a new array.
+- When complete, the helper should return the index of the pivot.
+
+  *Picking a Pivot*
+
+    - The runtime of quick sort depends in part on how the pivot is initially selected.
+    - Ideally, the pivot should be chosen so that it's roughly the median value in the data set we're sorting.
+    - For simplicity, we'll always choose the pivot to be the first element (this comes with some consequencest though (explored later)).
+  
+  *Pivot Pseudocode*
+
+    - It will help to accept three arguments: an array, a start index, and an end index (these can default to 0 and the array length minus 1, respectively)
+    - Grab the pivot from the start of the array.
+    - Store the current pivot index in a variable to keep track of where the pivot should end up.
+    - Loop through the array from the start until the end.
+      - if the pivot is greater than the current element, increment the pivot index variable and then swap the current element with the element at the pivot index.
+    - Swap the starting element (i.e. the pivot) with the pivot index.
+    - Return the pivot index.
+
+  ```javascript
+    function pivot(arr, start = 0, end = arr.length - 1) {
+      const pivotVal = arr[start];
+      var pivotIdx = start;
+      for(let i = start + 1; i <= end; i++) {
+        if (pivotVal >= arr[i]) {
+          pivotIdx++;
+          [arr[i], arr[pivotIdx]] = [arr[pivotIdx], arr[i]];
+        }
+      }
+      [arr[pivotIdx], arr[start]] = [arr[start], arr[pivotIdx]];
+      return pivotIdx;
+    }
+  ```
+
+#### Quicksort Implementation
+
+  *Quicksort Pseudocode*
+
+    - Call the pivot helper on the array.
+    - After obtaining the pivot index, recursively call quicksort on the subarray to the left of that index and on the subarray to the right of it.
+    - Our base case occurs when we consider a subarray with less than 2 elements. Due to the fact that the array is being sorted in-place, the base case is checked comparing start and end pointers from the given subarray considered.
+
+  ```javascript
+    function quickSort(arr, start = 0, end = arr.length -1) {
+      if (start >= end) return;
+      var pivotIdx = pivot(arr, start, end);
+      quickSort(arr, start, pivotIdx - 1);
+      quickSort(arr, pivotIdx+1, end);
+      return arr;
+    }
+  ```
+
+#### Quicksort Big O Complexity
+
+  Time Complexity (Best) | Time Complexity (Average) | Time Complexity (Worst) | Space Complexity
+  :----:|:----:|:----:|:----:|
+  O(nlog(n)) | O(nlog(n)) | O(n<sup>2</sup>) | O(log(n))
+
+  \* The worst case is quadratic is because the way our implementation picks the pivot element (always the first element in the subarray checked). In the case a nearly sorted array is passed to our quicksort implementation, the algorithm is going to potentially loop through the complete array length per each item in it (O(n) decompositions and O(n) comparisons (e.i. iterations over all elements to the right of the pivot, which is always selected from the left-most position on the subarray) per decomposition
+
 ## 17. Radix Sort
+
+Radix sort is a special sorting algorithm that works on lists of numbers. *It never makes comparisons between elements*. It exploits the fact that information about the size of a number is encoded in the number of digits.
+
+  - More digits mean a bigger number.
+
+#### Radix Sort Helpers
+
+- `getDigit(num, place)`: returns the digit in *num* at the given *place* value.
+- `getCount(num)`: returns the number digits in *num*.
+- `mostDigits(nums)`: given an array of numbers, returns the number of digits in the largest numbers in the list.
+
+  ```javascript
+    function getDigit(num, digitPos) {
+      return Math.floor(Math.abs(num)/Math.pow(10,digitPos)) % 10;
+    }
+
+    function digitCount(num) {
+      if (num === 0) return 1;
+      return Math.floor(Math.log10(Math.abs(num))) + 1;
+    }
+
+    function mostDigits(numArr) {
+      var mostDigits = 0;
+      numArr.forEach(function digitChecker(num) {
+        mostDigits = Math.max(digitCount(num), mostDigits);
+      })
+      return mostDigits;
+    }
+  ```
+
+#### Radix Sort Implementation
+
+*Radix Sort Implementation*
+
+  - Define a function that accepts a list of numbers.
+  - Figure out how many digits the largest number has.
+  - Loop from k = 0 up to this largest number of digits.
+  - For each iteration of the loop:
+    - Create buckets for each digit (0 to 9).
+    - Place each number in the corresponding bucket based on its *k*th digit.
+  - Replace our existing array with values in our bucket starting with 0 and going up to 9.
+  - Return the list at the end.
+
+  ```javascript
+    function radixSort(nums) {
+      var largestDigitCount = mostDigits(nums);
+      for(var k = 0; k < largestDigitCount; k++) {
+        
+        /* 
+        *** My implementation of buckets creation and filling
+        var buckets = [0,1,2,3,4,5,6,7,8,9].reduce(function bucketCreator(buckets, digit) {
+          buckets[digit] = []
+          return buckets
+        },{});
+        
+        nums.forEach(function inBucketsLocator(num) {
+          buckets[getDigit(num, i)].push(num);
+        })
+
+        ***My implementation of in-place list sorting (based on the assumption the array passed should be modified in-place)
+        
+        var count = 0;
+        Object.values(buckets).forEach(function bucketPicker(bucket) {
+          bucket.forEach(function numsSorter(bucketItem) {
+            nums[count] = bucketItem;
+            count++;
+          })
+        });
+        */
+        var digitBuckets = Array.from({length: 10}, () => []);
+       
+        nums.forEach(function inBucketsLocator(num) {
+          var digit = getDigit(num, k)
+          digitBuckets[digit].push(num);
+        })
+        // this implementation reassigns a new array with each iteration
+        nums = [].concat(...digitBuckets);
+      }
+      return nums;
+    }    
+  ```
+
+#### Radix Sort Big O Complexity
+
+  Time Complexity (Best) | Time Complexity (Average) | Time Complexity (Worst) | Space Complexity
+  :----:|:----:|:----:|:----:|
+  O(nk) | O(nk) | O(nk) | O(n + k)
+
+  \* n - length of array of numbers
+  
+  \* k - number of digits on each number (average)
