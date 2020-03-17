@@ -1027,8 +1027,8 @@ A data structure that contains a head, tail and a length property.
 
     HEAD ___________LENGTH = 4_____________TAIL
       |                                      |
-      |    next         next          next   |
-    ( 4 )--------( 6 )--------( 8 )--------( 2 )--> null
+      |    next         next         next    |
+    ( 4 )------->( 6 )------->( 8 )------->( 2 )--> null
 
 *Comparison with arrays:*
 
@@ -1348,3 +1348,522 @@ Access | O(n)
 ## 20. Double Linked Lists
 
 #### Double Linked Lists
+
+*Almost* identical to Singly Linked Lists, except every node has another pointer to the previous node.
+
+The improved flexibility on these Linked Lists has the tradeoff on more memory requirements.
+
+        HEAD _____________LENGTH = 4_______________TAIL
+          |                                          |
+          |      next          next          next    |
+null <--( 4 )<========>( 6 )<=======>( 8 )<=======>( 2 )--> null
+                 prev          prev          prev
+
+*Double Linked Lists starter code*
+
+  ```javascript
+    class Node {
+      constructor(val) {
+        this.val = val;
+        this.next = null;
+        this.prev = null; // the unique distinction with respect to SLL
+      }
+    }
+
+    class DoubleLinkedList {
+      constructor() {
+        this.head = null;
+        this.tail = null;
+        this.length = 0;
+      }
+      // Additional methods go in here
+    }
+  ```
+#### Pushing
+
+Adding a node to the end of the DLL.
+
+*Pushing Pseudocode*
+
+  - Create a new node with the value passed to the function.
+  - If the head property is null set the head and tail to be the newly created node.
+  - If not, set the next property on the tail to be that node.
+  - Set the previous property on the newly created node to be the tail.
+  - Set the tail to be the newly created node.
+  - Increment the length.
+  - Return the DLL.
+
+  ```javascript
+    // ...
+    push(val) {
+      let newNode = new Node(val);
+      if(!this.head) {
+        this.head = newNode;
+        this.tail = this.head;
+      } else {
+        this.tail.next = newNode;
+        newNode.prev = this.tail;
+        this.tail = newNode;
+      }
+      return ++this.length; // or as the pseudocode states, return this;
+    }
+    // ...
+  ```
+
+#### Popping
+
+Removing a node from the end of the DLL.
+
+*Popping Pseudocode*
+
+  - If there is no head, return undefined.
+  - Store the current tail in a variable to return later.
+  - If the length is 1, set the head and tail to be null.
+  - Update the tail to be the previous node.
+  - Set the newTail's next to null.
+  - Decrement the length.
+  - Return the value removed.
+
+  ```javascript
+    // ...
+    pop() {
+      if(!this.head) return undefined;
+      let oldTail = this.tail;
+      if(this.length === 1) {
+        this.head = null;
+        this.tail = this.head;
+      } else {
+        this.tail = this.tail.prev;
+        this.tail.next = null;
+        oldTail.prev = null;
+      }
+      this.length--;
+      return oldTail; 
+    }
+    // ...
+  ```
+
+#### Shifting
+
+Removing a node from the beginning of the DLL.
+
+*Shifting Pseudocode*
+
+  - If length is 0, return undefined.
+  - Store the current head property in a variable (we'll call it old head).
+  - If the length is one.
+    - Set the head to be null.
+    - Set the tail to be null.
+  - Update the head to be the next of the old head.
+  - Set the head's prev property to null.
+  - Set the old head's next to null.
+  - Decrement the length.
+  - Return old head.
+
+  ```javascript
+    // ...
+    shift() {
+      if(!this.head) return undefined;
+      let oldHead = this.head;
+      if(this.length === 1) {
+        this.head = null;
+        this.tail = this.head;
+      } else {
+        this.head = oldHead.next;
+        this.head.prev = null;
+        oldHead.next = null;
+      }
+      this.length--;
+      return oldHead;
+    }
+    // ...
+  ```
+#### Unshifting
+
+Adding a node to the beginning of the DLL.
+
+*Unshifting Pseudocode*
+
+  - Create a new node with the value passed to the function.
+  - If the length is 0:
+    - Set the head to be the new node.
+    - Set the tail to be the new code.
+  - Otherwise:
+    - Set the prev property on the head of the list to be the new node.
+    - Set the next property on the new node to be the head property.
+    - Update the head to be the new node.
+  - Increment the length.
+
+  ```javascript
+    // ...
+    unshift(val) {
+      let newHead = new Node(val);
+      if(!this.head) {
+        this.head = newHead;
+        this.tail = this.head;
+      } else {
+        newHead.next = this.head;
+        this.head.prev = newHead;
+        this.head = newHead;
+      }
+      return ++this.length;
+    }
+    // ...
+  ```
+#### Get
+
+Accessing a node in a DLL by its position.
+
+*Get Pseudocode*
+
+  - If the index is less than 0 or greater or equal to the length, return null.
+  - If the index is less than or equal to half the length of the list:
+    - Loop through the list starting from the head and loop towards the middle.
+    - Return the node once its found.
+  - If the index is greater than half the length of the list:
+    - Loop through the list starting from the tail and loop towards the middle.
+    - Return the node once it is found.
+
+  ```javascript
+    // ...
+      // This method is written in a way that checks the shortest path to the idx
+    // It determines how to traverse the double linked list, starting from head or from tail
+    // depending on the position of the idx with respect to the length of the list
+    get(idx) {
+      if(idx < 0 || idx >= this.length) return null;
+      const traverse = (idx, start) => {
+        let dir = "";
+        start === this.head ? dir = "next" : dir = "prev"; 
+        let currentNode = start;
+        let count = 0;
+        while(count != idx) {
+          currentNode = currentNode[dir];
+          count++;
+        }
+        return currentNode;
+      }
+      let totalIdx = this.length - 1
+      if (idx >= totalIdx/2) {
+        console.log('starting at tail')
+        return traverse(totalIdx - idx, this.tail) 
+      } else {
+        console.log('starting at head')
+        return traverse(idx, this.head)
+      }
+    }
+    // ...
+  ```
+
+#### Set
+
+Replacing the value of a node in a DLL.
+
+*Set Pseudocode*
+
+  - Create a variable which is the result of the get method at the index passed to the function:
+    - If the get method returns a valid node, set the value of that node ot be the value passed to the function.
+    -Return true.
+  - Otherwise, return false.
+
+  ```javascript
+    // ...
+    set(idx, val) {
+      let node = this.get(idx);
+      if(!node) return false;
+      node.val = val;
+      return true;
+    }
+    // ...
+  ```
+
+#### Insert 
+
+Adding a node in a DLL by a certain position.
+
+*Insert Pseudocode*
+
+  - If the index is 0, unshift.
+  - If the index is the same as the length, push.
+  - If the index is less than zero or greater than or equal to the length return false.
+  - Use the get method to access the index where to insert the new node.
+  - Set the next and properties on teh correct nodes to ling everything together.
+  - Increment the length.
+  - Return true.
+
+  ```javascript
+    // ...
+    insert(idx, val) {
+      if(idx === 0) return Boolean(this.unshift(val));
+      if(idx === this.length - 1) return Boolean(this.push(val));
+      let node = this.get(idx);
+      if(!node) return false;
+      let prevNode = node.prev;
+      let newNode = new Node(val);
+      newNode.prev = prevNode;
+      prevNode.next = newNode;
+      newNode.next = node;
+      node.prev = newNode;
+      this.length++;
+      return true;     
+    }
+    // ...
+  ```
+
+#### Remove
+
+Removing a node in DLL by a certain position.
+
+*Remove Pseudocode*
+
+  - If the index is 0, shift.
+  - If the index is the same as the length - 1, pop.
+  - If the index is less than zero or greater than or equal to the length return undefined.
+  - Use the get method to retrieve the item to be removed.
+  - Update the next and prev properties to remove the found node from the list.
+  - Set next and prev to null on the found node.
+  - Decrement the length.
+  - Return the removed node.
+
+  ```javascript
+    // ...
+    remove(idx) {
+      if(idx === 0) return this.shift(val);
+      if(idx === this.length - 1) return this.pop(val);
+      let deletedNode = this.get(idx);
+      if(!deletedNode) return null;
+      let prevNode = deletedNode.prev;
+      let nextNode = deletedNode.next;
+      [prevNode.next, nextNode.prev] = [nextNode, prevNode];
+      [deletedNode.prev, deletedNode.next] = [null, null];
+      this.length--
+      return deletedNode;
+    }
+    // ...
+  ```
+
+#### Big O of Double Linked Lists
+
+Insertion | O(1)
+Removal |O(1)
+Searching | O(n)
+Access | O(n)
+
+  \* Technically, searching is O(n/2), but that's still O(n)
+
+#### Recap 
+
+  - Double Linked Lists are almost identical to SLL except there is an additional pointer to previous nodes.
+  - Better than a SLL for findind nodes and can be done in half the time.
+  - However, they do take up more memory considering the extra pointer.
+
+## 21. Stacks & Queues
+
+#### Intro to Stacks
+
+A stack is a LIFO data structure. The last element added to the stack will be the first element removed from the stack.
+
+ - Where stacks are used?:
+  - Managing function invocations.
+  - Undo / Redo.
+  - Routing (the history object) is treated like a stack: frontend libraries like React use a stack to model the history of the pages viewed.
+
+###### Stack Class
+
+  ```javascript
+    class Node {
+      constructor(val) {
+        this.value = val;
+        this.next = null;
+      }
+    }
+
+    class Stack {
+      constructor() {
+        this.first = null;
+        this.last = null;
+        this.size = 0;
+      }
+      //Additional methods go in here
+    }
+  ```
+
+###### Pushing
+
+Add a value to the *top* (front) of the stack.
+
+*Pushing Pseudocode*
+
+- The function should accept a value.
+- Create a new node with that value.
+- If there are no nodes in the stack, set the first and last property to be the newly created node.
+- If there is at least one node, create a variable that stores the current first property on the stack.
+- Reset the first property to be the newly created node.
+- Set the next property on the node to be the previously created variable.
+- increment the size of the stack by 1.
+
+  ```javascript
+    // ...
+    push(val) {
+      let newNode = new Node(val);
+      if(!this.first) {
+        this.first = newNode;
+        this.last = newNode;
+      } else {
+        newNode.next = this.first;
+        this.first = newNode;
+      }
+      return ++this.size;
+    }
+    // ...  
+  ```
+
+###### Pop
+
+Remove a value from the *top* of the stack.
+
+*Pop Pseudocode*
+
+- If there are no nodes in the stack, return null.
+- Create a temporary variable to store the first property on the stack.
+- If there is only 1 node, set the first and last property to be null.
+- If there is more than one node, set the first property to be the next property on the current first.
+- Decrement the size of the stack by 1.
+
+  ```javascript
+    // ...
+    pop() {
+      if(!this.first) return null;
+      let deleted = this.first;
+      if(!this.first === this.last) {
+        this.last = null;
+      }
+      this.first = this.first.next;
+      this.size--;
+      return deleted.value;
+    }
+    // ...  
+  ```
+###### Big O of Stacks
+
+Insertion | O(1)
+Removal |O(1)
+Searching | O(n)
+Access | O(n)
+
+###### Recap on Stacks
+
+  - Stacks are a LIFO data structure where the last value in is always th first one out.
+  - Stacks are used to handle function invocations (the call stack), for operations like undo/redo, for routing and much more.
+  - They are not built in data structures in JS, but are relatively simple to implement.
+
+#### Intro to Queues
+
+A Queue is a first-in first-out (FIFO) data structure.
+
+- Where queues are used in programming?
+  - Background tasks.
+  - Uploading resources.
+  - Printing / Task processing
+
+#### Queue Class
+
+  ```javascript
+    class Queue {
+      constructor() {
+        this.first = null
+        this.last = null;
+        this.size = 0;
+      }
+      // Additional methods go in here
+    }
+
+    class Node {
+      constructor(val) {
+        this.value = val;
+        this.next = null;
+      }
+    }
+  ```
+
+###### Enqueue
+
+Add a value to the back of the queue.
+
+*Enqueue Pseudocode*
+
+  - This function accepts a value.
+  - Create a new node using that value passed to the function.
+  - If there are no nodes in the queue, set this node to be the first and last property of the queue.
+  - Otherwise, set the next property on the current last to be that node, and then set the last property on the queue to be that node.
+  - Increment the size property of the queue.
+
+  ```javascript
+    // ...
+    enqueue(val) {
+     let newNode = new Node(val);
+     if(!this.first) {
+       this.first = newNode;
+       this.last = this.first;
+     } else {
+       this.last.next = newNode;
+       this.last = newNode;
+     }
+     return ++this.size;
+    }
+    // ... 
+  ```
+
+###### Dequeue
+
+Remove a value from the from of the queue.
+
+*Dequeue Pseudocode*
+
+  - If there is no first property, just return null.
+  - Store the first property in a variable.
+  - See if the first is the same as the last (check if there is only 1 node). If so, set the first and last to be null.
+  - If there is more than 1 node, set the first property to be the next property of first.
+  - Decrement the size by 1.
+  - Return the value of the node dequeued.
+
+  ```javascript
+    // ...
+    dequeue() {
+     if(!this.first) return null;
+     
+     if(this.first === this.last) {
+       this.last = null;
+     }
+     let deleted = this.first
+     this.first = this.first.next
+     this.size--;
+     return deleted;
+    }
+    // ... 
+  ```
+
+###### Big O of Queues
+
+Insertion | O(1)
+Removal |O(1)
+Searching | O(n)
+Access | O(n)
+
+###### Recap on Queues
+
+- Queues are a FIFO data structure, all elements are first in, first out.
+- Queues are useful for processing tasks and are foundational for more complex data structures.
+- Insertion and removal can be done in O(1).
+
+## 22. Binary Search Trees
+
+#### Introduction to Trees
+
+
+
+
+
+
+
+
+
