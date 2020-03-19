@@ -1859,11 +1859,180 @@ Access | O(n)
 
 #### Introduction to Trees
 
+A tree is a data structure that consist of nodes in a parent / child relationship. Trees are nonlinear data structures, whereas lists are whats considered linear data structures.
 
+  - We can think of Single Linked List as sort of a special case of a tree.
 
+*Tree Terminology*
 
+  - Root: the top node in a tree.
+  - Child: a node directly connected to another node when moving away from the root.
+  - Parent: the converse notion of a child. (converse?)
+  - Siblings: a group of nodes with the same parent.
+  - Leaf: a node with no children.
+  - Edge: the connection between one node and another.
 
+Trees are used in a lot of different applications:
 
+  - HTML DOM.
+  - Networking Routing.
+  - Abstract Syntax Tree.
+  - Artificial Intelligence.
+  - Folders in Operating Systems.
+  - Computer File Systems.
 
+There are kinds of trees:
 
+  - Regular Trees (no limit in children from a given node).
+  - Binary Trees (any given node can have at most 2 children).
+  - Binary Search Trees (any given node can have at most 2 children, where the children are arranged in a sorted fashion with respect to the parent node).
 
+*How BSTS Work?*
+
+  - Every parent node has at most two children.
+  - Every node to the left of a parent node is always less than the parent.
+  - Every node to the right of a parent node is always greater than the parent.
+
+  \* These considerations give greater capacities to a BST when searching/inserting an item inside it; after comparing the required value with the one in a given node, half of the children are discarded based on the comparison and the traversing of the tree continues until finding the value or node where to insert the value. or when a branch ends.
+
+#### BST Class
+
+  ```javascript
+    class TreeNode {
+      constructor(val) {
+        this.value = val;
+        this.right = null;
+        this.left = null;
+      }
+    }
+
+    class BST {
+      constructor() {
+        this.root = null;
+      }
+      // Additional methods go in here
+    }
+  ```
+
+#### BST Insert 
+
+Adding a node in the correct position in a BST based on its.
+
+*Insert Pseudocode*
+
+  - Create a new node.
+  - Starting at the root:
+    - Check if there is a root, if not then the root now becomes the new node.
+    - If there is a root, check if the value of the new node is greater than or less than the value of the root.
+    - If it is greater:
+      - Check to see if there is a node to the right.
+        - If there is, move to that node and repeat these steps.
+        - If there isnot, add that node as the right property.
+    - If it is less:
+      - Check to see if theres is a node to the left:
+        - If there is, move to that node and repeat these steps.
+        - If there is not, add that node as the left property.
+
+  ```javascript
+    // ...
+
+    /* Iterative Approach */
+    insertIterative(val) {
+      if(!this.root) {
+        this.root = new TreeNode(val);
+        return "Node inserted";
+      } else {
+        let currentNode = this.root;
+        while(currentNode) {
+          if(val > currentNode.value) {
+            if(!currentNode.right) {
+              currentNode.right = new TreeNode(val);
+              return this;
+            }
+            currentNode = currentNode.right;
+          } else if(val < currentNode.value) {
+            if(!currentNode.left) {
+              currentNode.left = new TreeNode(val);
+              return this;
+            }
+            currentNode = currentNode.left;
+          } else {
+            return "Node already inserted";
+          }
+        }
+      }
+      return "Node inserted"
+    }
+
+    /* Recursive approach */
+    insertRecursive(val) {
+      if(!this.root) {
+          this.root = new TreeNode(val);
+          return "Node Inserted";
+      }
+
+      return compare(val, this.root);
+
+      function compare(val, currentNode, nextNode = currentNode, side = "") {
+        if(!nextNode) {
+          currentNode[side] = new TreeNode(val);
+          return "Node inserted"
+        } else if(val > nextNode.value) {
+          return compare(val, nextNode, nextNode.right, "right");
+        } else if(val < nextNode.value) {
+          return compare(val, nextNode, nextNode.left, 'left');
+        } else {
+          return 'Value already in tree';
+        }
+      }  
+    }
+
+    // ...
+  ```
+
+#### BST Find
+
+The process of finding a given value in a tree is very similar to inserting one inside it.
+
+*Find Pseudocode*
+
+  - Starting at the root:
+    - Check if there is a root, if not then the search is done.
+    - If there is a root, check if the value of the node is the value we are looking for, if we found it, we are done.
+    - If not, check to see if the value is greater than or less than the value of the root.
+    - If it is greater:
+      - Check to see if there is a node to the right.
+        - If there is, move to that node and repeat these steps.
+        - If there is not, we are done searching.
+    - If it is less:
+      - Check to see if theres is a node to the left:
+        - If there is, move to that node and repeat these steps.
+        - If there is not, we are done searching.
+
+  ```javascript
+    // ...
+    find(val) {
+      if(!this.root) return undefined;
+      let currentNode = this.root;
+      while(val !== currentNode.value) {
+          if (val > currentNode.value) {
+            if(!currentNode.right) return undefined;
+            currentNode = currentNode.right;
+          } else {
+            if(!currentNode.left) return undefined;
+            currentNode = currentNode.left;
+          }
+      }
+      return currentNode;
+    }
+    // ...
+  ```
+
+#### Big O of BST
+
+Insertion | O(log(n))
+Searching | O(log(n))
+
+\* These represents best and average cases. It is important to point out that this big O is not guaranteed for worst case; certain BST configuration, just like a one-sided BST, are very slow, ending up similar to a list/SLL. A way to refactor a one-sided BST picking a different root for the tree.
+
+\* Big O(log(n)) represents the fact that as the numbers of nodes doubles, number of steps to insert/find increases only by 1. 
