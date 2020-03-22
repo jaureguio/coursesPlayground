@@ -448,21 +448,256 @@ How can we compare different values with each other?
   a and b | if a is False, the a, else b
   not a | if a is False, the True, else False
 
+  ```python
+    [1] and [2] # [2]
+    [] and [2] # []
+
+    [] or [2] # [2]
+    [5] or [2] # [5]
+
+    a = False
+    b = True
+    a and b # False
+
+    [] and {} # []
+    [] and {1} # []
+
+    0 or 1 # 1
+
+    "Hello" and None # nothing (None) return
+  ```
+
+## 09. Looping & Control Flow
+
+Loops and control statements allow us to control the logical flow of our program.
+
+#### Looping Over Lists
+
+Looping in python is a simpler, cleaner process in comparison with other languages like JavaScript or Java.
+
+The "in" keyword (used to assess if an item was in a sequence) when combined with the "for" keyword can be used to indicate looping over each item in a sequence. The syntax is "for single_item in items" followed by a ":", followed by a new line with a level of indentation. The code we'd like to consider the *body on the loop* should follow next.
+
+  - We can use the "range(startIdx, endIdx, step)" to lazily produce a list of numbers which we can use to iterate over (moment in which Python would actually fill memory with the list of numbers)
+
+#### Looping Over Dictionaries
+
+Loops can be implemented on dictionaries and its various methods. We can even do tuple unpacking when using my_dict.items() (method which would return a list of tuples containing key, value pairs).
+
+
+  ```python
+
+    hex_colors = {"Red": "#FF", "Green": "#008"}
+    for colors in hex_colors:
+      print(color)
+
+    # This loop will print
+    # Red
+    # Green
+
+    for label, hex in hex_colors.items():
+      print(label, hex)
+
+    # This loop will print
+    # Red #FF
+    # Green #008    
+  ```
+
+  - In the case we need the index of the current item being iterated over, we can use the built-in method "enumarate()"; this method will return a tuple per each item in a list, containing the index and the item itself:
+
     ```python
-      [1] and [2] # [2]
-      [] and [2] # []
 
-      [] or [2] # [2]
-      [5] or [2] # [5]
+    hex_colors = ["Red", "Green", "Blue"]
+    for i, color in enumerate(colors):
+      print(f"index: {i}, color: {color}")
 
-      a = False
-      b = True
-      a and b # False
+    # This loop will print
+    # index: 0, color: Red
+    # index: 1, color: Green
+    # index: 2, color: Blue
+    # Green
 
-      [] and {} # []
-      [] and {1} # []
+    for label, hex in hex_colors.items():
+      print(label, hex)
 
-      0 or 1 # 1
-
-      "Hello" and None # nothing (None) return
+    # This loop will print
+    # Red #FF
+    # Green #008    
     ```
+
+#### Control Flow
+
+In Python, we use the keywords "if", "elif" and "else" to implement control flow within our programs:
+
+  ```python
+
+    a = False
+    b = True
+
+    if a:
+      print("1")
+    elif b:
+      print("2")
+    else:
+      print("3")
+  ```
+
+#### `while` & Control statements
+
+`while` loops are special type of loop in Python. Instead of running just once when a condition is met, like an `if` statement, they run up until a condition is not longer met.
+
+**_`while` loops usually need to be accompanied by an always changing sentinel value.
+
+  ```python
+    counter = 0 # sentinel value
+    max = 4 # condition to check
+
+    while counter < max:
+      print(f"The counter is: {counter}")
+      counter = counter + 1
+
+    # The counter is: 0
+    # The counter is: 1
+    # The counter is: 2
+    # The counter is: 3
+  ```
+
+*break, continue and return*
+
+`break` and `continue` allow us to control the flow of our loops.
+
+ - When using `break` we'll completely break out from the current loop, meaning it wont run any more of the statements contained inside of it.
+
+ - `continue` works a bit different; it will make the current loop to skip all statements on the running iteration after the `continue` keyword, restarting on the next iteration.
+
+  names = ["Jimmy", "Rose", "Max", "Nina", "Phillip"]
+
+      for name in names: <----  
+                              |
+        if len(name) != 4:    |
+                              |
+          continue -----------'
+
+        print(f"Hello, {name}")
+
+        if name == "Nina"
+--------- break
+|
+'-->  print("Done")
+
+- The `return` keyword can be thought as a hard shortcut to loops inside functions:
+
+  ```python
+    def find_target_name(names):
+      for name in names:
+        print(name)
+        if name == "Nina":
+          return "Found the special case"
+
+    names = ["Max", "Nina", "Rose"]
+    
+    find_target_name(names)
+    
+    # Max
+    # Nina
+    # 'Found the special case`
+  ```
+
+## 10. Real World
+
+#### Importing Modules & the `main` Method
+
+We can import third-party or another module in the same directory of the particular file where we need to use the module with the `import` keyword.
+
+  - When importing modules, Python by default will run the code from the module imported as well as the current module being ran. To avoid this, we can use the `__name__` built-in variable provided in Python to conditionally run modules when imported:
+
+    - The `__name__` variable represents sort of a variable environment that takes the value of `__main__` when the code is run directly from the module containing it, and the name of the file containing the code when it is being run from another file.
+
+  ```python
+    #
+    # name_lib.py is the name of this module 
+    #
+
+    def upper_case_name(name):
+      return name.upper()
+
+    if __name__ == "__main__":
+      name = "Oscar"
+      name_upper = upper_case_name(name)
+      print(f"Upper case name is {name_upper}")
+      print(f"dunder name", __name__) 
+      # __name__ will be __main__ just when this file is run directly
+
+    #
+    # other_program.py
+    #
+
+    import name_lib
+
+    my_name = "Fred"
+    upper_name = name_lib.upper_case_name(my_name)
+
+    print(f"In my own code, upper name is {upper_name}")
+
+    # When running other_program.py, we will get in the console:
+    # In my own code, upper name is FRED
+  ```
+
+#### Exceptions
+
+Exceptions thrown from our files can be catch using the `try` and `except` block:
+
+  ```python
+    try:
+      int("a") # this will throw an error
+    except ValueError as e:
+      print("oops, you can't do that!", e)
+
+    print("This is the end of my program") # This line would not get to run if the error was not caught (our program would crash before hitting that line of code)
+  ```
+
+#### External Modules with PIP
+
+If we want to use external libraries (in the previous code we reached internal/local code in our machine), we need to use a tool call PIP, which is analogous to npm for JavaScript.
+
+  - If we want to use/download the "requests" library to perform http requests, we should type in the command line the following:
+
+    `python -m pip install requests` 
+
+  - Then, in order to use the library in our code, we can just import it as regular `import` as before.
+
+#### API's Overview
+
+*Using the requests library we can interact with API's from the internet.*
+
+Per the dictionary, and API is:
+
+> a set of functions and procedures allowing the creation of applications that access the features or data of an operating system, application or other service.
+
+An API is a standardized way of accessing information across the web, between clients and servers. These days most APIs are RESTful. That means they follow a common set of paradigms and practices.
+
+#### App Exercise
+
+Write a small program that requests the top repositories from GitHub, ordered by the number of stars each repository has, then we are going to print the results to the terminal.
+
+  - Remember to download external libraries we should use the PIP tool (which may be sometimes used directly, though Python recommends using it as in the previous example):
+
+    `python -m pip install requests`
+
+  ```python
+    #
+    # github_repos_example.py 
+    #
+
+    import requests
+
+    def repos_with_most stars():
+      gh_api_repo_search_url = "https://api.github.com/search/repositories"
+
+      parameters = {"q": "stars:>50000"}
+      response = requests.get(gh_api_repo_search_url, params=parameters)
+
+      # the json() methods takes a json response and converts it into a Python dictionary
+      response_json = respose.json()
+
+  ```
+
