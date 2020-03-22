@@ -505,7 +505,6 @@ Loops can be implemented on dictionaries and its various methods. We can even do
   - In the case we need the index of the current item being iterated over, we can use the built-in method "enumarate()"; this method will return a tuple per each item in a list, containing the index and the item itself:
 
     ```python
-
     hex_colors = ["Red", "Green", "Blue"]
     for i, color in enumerate(colors):
       print(f"index: {i}, color: {color}")
@@ -529,7 +528,6 @@ Loops can be implemented on dictionaries and its various methods. We can even do
 In Python, we use the keywords "if", "elif" and "else" to implement control flow within our programs:
 
   ```python
-
     a = False
     b = True
 
