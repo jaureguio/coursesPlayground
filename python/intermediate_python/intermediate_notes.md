@@ -125,13 +125,11 @@ Python comes with various built-in list operations represented as functions like
     # 134
   ```
 
-
 #### Sets & Dictionaries
 
 Comprehensions can also be implemented based upon other data structures like dictionaries and sets.
 
   ```python
-
     #
     # SET comprehension
     #
@@ -234,3 +232,208 @@ Takes values from different arrays, and one by one it puts them inside a tuple. 
 ## 03. OOP
 
 #### Object Oriented Programing
+
+Object-Oriented Programming (OOP) is a language model (or *paradigm*) in which properties or behaviors are organized into "objects".
+
+  - An object can be a function, a variable, a property, a class... *everything in Python is an object. We can think of an object as a generic container.
+  - Getting familiar with OOP will help us encapsulate our code into objects for better organization and readability, as well as increase efficiency by making our code easily reusable. 
+
+#### Classes
+
+Every thing or object in Python is an instance of a *class*. The number `42` is an instance of the class `int`. The string `Hello, World` is an instance of the `str`(string)  class. these classes in turn are subclasses of the master object class.
+
+*Classes vs Instances*
+
+  - We can think of a class as a 'type' of something, like 'Car'. We can think of an instance as a specific thing, such as 'my Volkswagen', which is a type of 'Car'.
+  - Both classes and instances can have variables and methods. Changing a class will change what is returned when we get that variable from an instance, however changing an instance variable only applies to that one instance.
+
+  ```python
+    # the number 5 is an instance of the class (type) int
+    type(int(5)) # <class 'int'>
+    # the class 'int' is a type of class
+    type(int) # <class 'type'>
+  ```
+
+All instance methods implicitly receive a parameter representing the instance being created from the class, commonly called `self`. When defining a class and the instance methods for it, we have to be aware to declare a parameter for the implicit `self` argument passed to them.
+
+  ```python
+    #
+    # cars.py
+    #
+    class Car:
+      runs = True
+
+      def starts(self, name):
+        self.name = name 
+        if self.runs:
+          print(f"The {self.name}'s engine is working")
+        else:
+          print(f"The {self.name}'s engine is not working!")
+
+    my_volkswagen = Car()
+    my_volkswagen.starts("Parati")
+
+    type(Car) # <class 'type'>
+    type(my_volkswagen) # <class 'cars.Car'>
+    isinstance(my_volkswagen, Car) # True
+  ```
+  - When working from the REPL we can import a library called `importlib`, and use its `reload()` method, which receives a module as argument and keeps the current REPL session updated with the latest change from the module.
+
+  ```python
+    # The following code is assumed to be run in the REPL
+    import importlib
+    import cars
+    #
+    # Some changes made to cars.py
+    #
+    import importlib.reload(cars) # changes will be loaded into the REPL
+  ```
+
+#### Initializer Method
+
+There are some special methods a class definition can have and which are not meant to be accessed directly neither from the class itself nor and instance.
+
+  - Special methods in Python are represented with a double underscore before and after the name of the method.
+  - The __init__ method is meant to be used to specify what should be configured in an instance at the moment of instantiation. This method should receive at least the `self` implicit argument and any additional parameters are passed as arguments on the class.
+
+  ```python
+    class Car:
+      def __init__(self, name):
+        self.name = name
+        self.runs = False
+        print(f"New Car instantiated, model {self.name}")
+
+    my_volkswagen = Car("Parati")
+    # New Car instantiated, model Parati
+  ```
+
+#### Class Methods
+
+Class methods are the ones that can be accessed without needing to instatiate the class. These cmethods are declared using the `@classmethod` decorator followed by a standard method definition. Class methods are used for special cases and they are not as common as instance methods.
+
+  - Class methods implicitly receives an arguments that representing the class itself. It is usually called `cls`
+  - Instances can access class methods.
+
+  ```python
+    class Car:
+      num_of_wheels = 4
+
+      # ...
+      
+      @classmethod
+      def get_number_of_wheels(cls):
+        return cls.num_of_wheels
+    
+    print(Car.get_number_of_wheels()) # 4
+  ```
+
+#### Types, isinstance & issubclass
+
+Python comes with built-in methods to allow us to inspect objects and determine information about their nature with respect to OOP.
+
+  - `type(obj)` returns the type of the object (or instance)provided.
+  - `isinstance(inst, cls)` returns `True` is `inst` is instance of `cls`, otherwise `False`
+  - `issubclass(subcls, cls)` returns `True` is `subcls` is subclass of `cls`, otherwise `False`
+  
+    - A subclass is defined passing a class already defined as argument to the definition of a new class declaration:
+    
+  ```python
+    class Vehicle:
+      # ...
+
+    # Defining a subclass of Vehicle
+    class Motorcycle(Vehicle):
+      # ...   
+  ```
+
+#### __str__ & __repr__
+
+Python comes with two methods that allow us to get the string (`str(obj)`) representation of an object and the instruction needed to tell Python to create an instance from a given object/class (`repr(obj/cls)`)
+
+ ```python
+  import datetime
+  now = datetime.datetime.now()
+  print(str(now)) # 2020-03-22 23:48:45.770420
+
+  print(repr(now)) # datetime.datetime(2020, 3, 22, 23, 48, 45.770420)
+ ```
+
+  - We can define what both these function are going to return we passing a custom class created by us.
+
+  ```python
+    #
+    # cars.py
+    #
+    class Car:
+      # ...
+    
+    my_car = Car("Parati")
+
+    print(my_car)) # <cars.Car object at 0x10234c0> - Useless information about our instance
+
+    # How about defining the special __str__ and __repr__ methods on the class?
+    class Car:
+      # ...
+      
+      def __str__(self):
+        return f"My car the {self.name} currently {self.runs}"
+      
+      def __repr__(self):
+        return f"Car({self.name})"
+      
+    my_car = Car("Parati")
+    str(my_car) # My car the Parati currently True
+    repr(my_car) # Car("Parati")
+  ```
+
+#### Inheritance
+
+Sometimes we might want to have shared properties amongst classes. Inheritance is a way for us to have classes that share attributes.
+
+  - Sharing properties and methods between classes help us to break up and organize our code in a hierarchy from more generic to more specific. Objects that belong to classes higher up the hierarchy; these are accessible via the more specific subclasses, but not viceversa.
+
+  ```python 
+    class Vehicle:
+      
+      def __init__(self, make, model, fuel="gas"):
+        self.make = make
+        self.model = model
+        self.fuel = fuel
+      
+      def __str__(self):
+        return f"This is a new Vehicle, my {self.model}"
+
+      def is_eco_friendly(self):
+        if self.fuel == "gas":
+          return False
+        else:
+          return True
+
+    class Car(Vehicle): # This is how inheritance is implemented
+
+      def __init__(self, make, model, fuel="gas", num_wheels=4):
+        # the super() method allow us to reference the class we are inheriting from in this subclass
+        # Calling the __init__ method from an inherited class brings all properties AND instance methods from it into the subclass
+        super().__init__(make, model, fuel)
+        self.num_wheels = num_wheels # Only available on instances of the Car subclass
+
+    four_by_four = Vehicle("Toyota","Tundra", fuel="diesel")
+    print(four_by_four) # This is a new Vehicle, my Tundra
+    print(four_by_four.is_eco_friendly()) # True
+    try:
+      four_by_four.num_wheels 
+    except AttributeError as error:
+      print(error)
+    # AttributeError: 'Vehicle' object has no attribute 'num_wheels'
+
+    my_volkswagen = Car("Volkswagen", "Parati")
+    print(my_volkswagen) # This is a new Vehicle, my Parati
+    print(my_volkswagen.is_eco_friendly()) # False
+    print(my_volkswagen.num_wheels) # 4
+
+    print(issubclass(Car, Vehicle)) # True
+  ```
+
+  - It is important to point out that a subclass can inherit from multiple classes.
+
+  *When running a Python file from the terminal, we can specify the -i flag before typin the file name in order to open a REPL after executing the contents of the file*
