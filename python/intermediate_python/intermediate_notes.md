@@ -437,3 +437,161 @@ Sometimes we might want to have shared properties amongst classes. Inheritance i
   - It is important to point out that a subclass can inherit from multiple classes.
 
   *When running a Python file from the terminal, we can specify the -i flag before typin the file name in order to open a REPL after executing the contents of the file*
+
+## 04. Exceptions
+
+#### Exception Types
+
+Errors that happen during parsing are called `SyntaxError`'s. These will probably be the most common error we will see, and usually happen because of a mistake in whitespace, a syntax misunderstanding, or a simple typo.
+
+Even if the syntax is correct, errors can still occur when our program is run. We call these `Exceptions`, and there are many different types (the more specific the error description, the better)
+
+  - An unhandled error is fatal: it will print debugging information (called a traceback), stop the interpreter, and exit the program. Handling errors will make our programs more robust in the face of issues.
+
+*Type of Exceptions*
+
+Exception | Cause of Error
+---- | ----
+`AttributeError` | Raised when attribute assignment or reference fails.
+`ImportError` | Raised when the imported module is not found.
+`IndexError` | Raised when index of a sequence is out of range.
+`KeyError` | Raised when a key is not found in a dictionary.
+`KeyboardInterrupt` | Raised when the user hits interrupt key (Ctrl+c or delete)
+`NameError` | Raised when a variable is not found in local or global scope.
+`SyntaxError` | Raised by parser when syntax error is encountered.
+`IndentationError` | Raised when there id incorrect indentation.
+`ValueError` | Raised when a function gets argument of correct type but improper value.
+
+\* More types of errors can be found in Python's official docs.
+
+*Exception Hierarchy*
+
+An important thing to know is that exceptions, like everything in Python, are just objects. They follow an inheritance hierarchy, just like classes do. For example, the `ZeroDivisionError` is a subclass of `ArithmeticError`, which is a subclass of `Exception`, itself a subclass of `BaseException`.
+
+If we wanted to catch a divide-by-zero error, we could use except `ZeroDivisionError`. But we could also use `except Exception`, but this is not a good idea, as it will catch almost *every* type of error, even ones we weren't expecting.
+
+#### try except
+
+Many languages have the concept of the "Try-Catch" block. Python uses four keywords: `try`, `except`, `else` and `finally`. Code that can possibly throw an exception goes in the `try` block. `except` gets the cod that runs if an exception is raised in the `try` block, and `finally` is an optional block of code that will run last, regardless of if an exception was raised.
+
+  ```python
+    try
+      x = int(input("Enter a number: "))
+    except ValueError:
+      print("That number was invalid")
+  ```
+
+  - The `except` clause may have multiple exceptions, given as a parenthesized tuple:
+
+  ```python
+    try:
+      # code to try
+    except (RuntimeError, TypeError, NameError):
+      # Code to run if one of these exceptions is hit/raised
+  ```
+
+  - A `try` statement can also have more than one `except` clause:
+
+  ```python
+    try:
+      # Code to try
+    except RuntimeError:
+      # Code to run if there's a RuntimeError
+    except TypeError:
+      # Code to run if there's a TypeError
+    except NameError:
+      # Code to run if there's a NameError
+  ```
+
+  - A good use for `finally` is for doing any cleanup that we want to happen, whether or not an exception is thrown:
+
+  ```python
+    try:
+      raise KeyboardInterrupt
+    finally:
+      print("Goodbye!)
+    # Goodbye!
+    # Traceback (most recent call last):
+    #   File "<stdin>", line 2, in <module>
+    # KeyboardInterrupt
+  ```
+
+#### Best Practices
+
+*Catch More Specific Exceptions First*
+
+  - Remember, our `except` handlres are evaluated in order, so be sure to put more specific exception first.
+
+  ```python
+    try:
+      my_value = 3.14 / 0
+    except ArithmeticError:
+      print("We had a general math error")
+    except ZeroDivisionError:
+      print("We had a divide-by-zero error")
+    
+    # We had a general math error
+  ```
+
+  - When we tried to divide by zero, we inadvertently raised a `ZeroDivisionError`. However, because `ZeroDivisionError` is a subclass of `ArithmeticError`, and `except ArithmeticError` came first, the information about our specific error was swallowed by the `except ArithmeticError` handler, and we lost more detailed information about our error.
+
+*Don't Catch `Exception`*
+
+  - It's a bad form to catch the general `Exception` class. This will catch every type of exception that subclasses the `Exception` class, which is almost all of them. We may have errors that we don't care about and don't affect the operation of our program, or maybe we are dealing with a flaky API and want to swallow errors and retry. By catching `Exception`, we run the risk of hitting an unexpected exception our program actually can't recover from, or worse, swallowing an important exception without properly logging it - a huge headache when trying to debug programs that are failing in weird ways.
+
+*Definitely don't catch `BaseException`*
+
+  - Catching `BaseException` is a really bad idea, because we'll swallow every type of Exception, including `KeyboardInterrupt`, the exception that causes our program to exit when we send a SIGINT (Ctrl-C). Don’t do it.
+
+#### Custom Exceptions
+
+Exceptions are just regular classes that inherit from `Exception` class. This makes it super easy to create our own custom exceptions, which can make our programs easier to follow and more readable. An exception doesn't need to be complicated:
+
+  ```python
+    class MyCustomException(Exception):
+      pass
+
+    raise MyCustomException()
+
+    # Traceback (most recent call last):
+    #   File "<stdin>", line 1, in <module>
+    # __main__.MyCustomException
+  ```
+
+It's ok to have a custom `Exception` subclass that only `pass`-es - our exceptions doesn't need to do anything fancy to be useful. Having custom exceptions - tailored to our specific use cases and that we can raise and catch in specific circumstances - can make our code much more readable and robust, and reduce the amount of code we write later to try and figure out what exactly went wrong.
+
+  - We can send additional information, like messages, to our exceptions:
+
+  ```python
+    class IncorrectValueError(Exception):
+      def __init__(self, value):
+        message = f"Got an incorrect value of {value}"
+        super().__init__(message)
+    
+    my_value = 9999
+    if my_value > 100:
+      raise IncorrectValueError(my_value)
+
+    # Traceback (most recen call last):
+    #   File "<stdin>", line 2, in <module>
+    # __main__.IncorrectValueError: Got an incorrect value of 9999
+  ```
+
+*A Custom Exception for our GitHub API app*
+
+  ```python
+    class GitHubApiException(Exception):
+
+      def __init__(self,status_code):
+        if status_code == 403:
+          message = "Rate limit reached. Please wait a minute and try again."
+        else:
+          message = f"HTTP status code was: {status_code}."
+
+        super().__init__(f"A GitHub API error occurred: {message}")
+  ```
+
+## 05. Libraries & Modules
+
+#### Libraries & Modules
+

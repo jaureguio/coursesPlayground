@@ -1,3 +1,19 @@
+from flask import Flask
+app = Flask(__name__)
+
+@app.route("/")
+def hello_world():
+  return "<h1>Hello World!</h1>"
+
+@app.route("/french")
+def bonjour_world():
+  return "<h1>Bonjour World!</h1>"
+
+@app.route("/name/<name_is>")
+def name_page(name_is):
+  return f"<h1>Hello, {name_is}</h1>"
+
+""" 
 class Vehicle:
   
   def __init__(self, make, model, fuel="gas"):
@@ -34,4 +50,5 @@ except AttributeError as error:
 my_volkswagen = Car("Volkswagen", "Parati")
 print(my_volkswagen) # This is a new Vehicle, my Parati
 print(my_volkswagen.is_eco_friendly()) # False
-print(my_volkswagen.num_wheels) # 4
+print(my_volkswagen.num_wheels) # 4 
+"""
