@@ -595,3 +595,745 @@ It's ok to have a custom `Exception` subclass that only `pass`-es - our exceptio
 
 #### Libraries & Modules
 
+The Python language was designed to be "batteries included" - it has arich and versatile standard library which is immediately available, without making the user download separate packages. This has given the Python language a head start in many projects. 
+
+  *The Standard Library*
+
+    - There are some great libraries included with Python that we'll probably end up seeing or using frequently. `sys` provides system-specific parameters and functions, such as `exit()`. `os` has miscellaneous operating system interfaces, and provides the excellent `os.path` submodule for handling file paths on any operating system. `math` gives us all the advanced math function. `json` is an easy-to-use json parser and encoder. Python even gives us built-i libraries for database access, logging, internet protocols, multimedia, debugging, and even libraries for extending Python itself. The full list of standard libraries can be found in the Python documentation.
+
+    - A quick example using the datetime library:
+
+  ```python
+    import datetime
+    right_now = datetime.datetime.now()
+    print(right_now)
+    # 2020-03-26 13:44:59.063527
+    repr(right_now)
+    # "datetime.datetime(2020, 3, 26, 13, 44, 590635)'
+  ```
+
+#### Module & Imports
+
+Python has a simple packgae structure. Any directory with a file named `__init__.py` can be considered a Python module.
+
+  > a __init__.py file is no longer required for Python 3 modules, but it's still supported and can be useful.
+
+  ```python
+    #
+    # my_math_functions.py
+    #
+    def add_numbers(x, y):
+      return x + y
+    
+    #
+    # another_file.py in the same folder 
+    #
+    import my_math_functions
+    my_math_functions.add_numbers(1, 2)
+    # 3
+  ```
+#### Best Practices
+
+There are few different ways to import modules or even specific objects from modules. We can import *everything* from a module into the local namespace using `*`:
+
+  ```python
+    from my_math_functions import *
+    add_numbers(1, 2)
+    # 3
+  ```
+  
+  - This isn't a good practice, because it's hard to tell where a specific function is coming from without the namespace context. Also, function names can conflict, and this can make thigs very difficult to debug.
+
+Better is to import functions specifically:
+
+  ```python
+    from my_math_functions import add_numbers
+    add_numbers(1, 2)
+    # 3
+  ```
+
+  - This make things a little clearer, as we can look at the top and see where the `add_number()` function came from. 
+
+However, an even better way is to just import the module and use it in calls to maintain the namespace context:
+
+  ```python
+    import my_math_functions
+    my_math_functions.add_numbers(1, 2)
+    # 3
+  ```
+
+  - This can be slightly more verbose, but unless it makes our function calls ridicuously long, it generally makes things much easier to debug.
+  - We can use the `as` keyword to make things a little easier on ourselves:
+
+  ```python
+    import my_math_functions as mmf
+    mmf.add_numbers(1, 2)
+    # 3
+  ```
+
+*PYTHONPATH*
+
+It is a list of paths on our system where Python will look for packages. Python will always look first in the working directory (the folder we're in when we start the REPL or run our program), so if our module folder is there, we can import it. We can also install our modules just like any other external modules, using a `setup.py` file. It's also possible to change or add paths to our `PYTHONPATH` list if we need to store modules elsewhere, but this isn't a very portable solution.
+
+#### PYPI
+
+PyPI (the Python Package Index) is an awesome service that helps us find and install software developed and shared by the Python community. Almost every user-contributed Python package has been published to PyPI. We can browse the site at pypi.org but most of the time we will probably interact with it through Python's `pip` tool.
+
+*Basic Usage*
+
+We can use the `pip` tool to install the latest version of a module and its dependencies from the Python Package Index:
+
+  ```powershell
+    (env) > python -m pip install SomePackage
+  ```
+
+#### Practice - Standard Library
+
+  ```python
+    import os
+
+    my_folder = os.getcwd()
+    print(f"Here are the files in {my_folder}:")
+
+    with os.scandir(my_folder) as folder:
+      for entry in folder:
+        print(f" - {entry.name}")
+    
+    """ 
+    Here are the files in
+    C:\Users\pc\Documents\Programacion\coursesPlayground\
+    python\pyworkshop\day_two_final:
+
+    - app.py
+    - repos
+    - requirements.txt
+    - static
+    - templates
+    - test.py
+    - __pycache__
+    """
+  ```
+
+`sys` is another commomly useful library, giving us access to some variables and functions used or maintained by the Python interpreter. Let's try using `sys` to get the arguments passed into our program from the command line, and to figure out what kind of computer we're using:
+
+  ```python
+    #
+    # sys_library.py
+    #
+    import sys
+    arguments = sys.argv
+    print(f"we received the following arguments:")
+
+    for arg in arguments:
+      print(f" - {arg}")
+
+    print(f"We are running on a '{sys.platform}' machine")    
+  ```
+
+  ```powershell
+    (env) > python sys_library.py argument1 hello world "this is one argument"
+
+    We received the following arguments:
+    - sys_library.py
+    - argument1
+    - hello
+    - world
+    - this is one argument
+    We are running on a 'win32' machine
+  ```
+
+Pypi (the Python Package Index) is an awesome service that helps us find and install almost any 3rd party Python package. We can browse the site at PyPI.org but most of the time we will probably interact with it through Python's `pip` command line tool.
+
+For example, earlier we may have installed the `requests` module. If we search `pip` for `requests`, we'll see every package in the index containing the word requests:
+
+  ```powershell
+    (env) > python -m pip search requests
+      requests-hawk (1.0.1)
+      - requests-hawk
+      requests-auth (5.1.0)
+      - Authentication for Requests
+      requests-dump (0.1.3)
+      - `requests-dump` provides hook functions for requests.
+      ...
+  ```
+
+  - After determining the library we need, we can install it as follows:
+
+  ```powershell
+    (env) > python -m pip install requests
+  ```
+
+## 06. Command Line Tools
+
+#### Advanced f-strings
+
+- Decimal Formatting
+
+  We can pass in two fields, `width` and `precision`. The format is `{value:width.precision}`. Let's format pi (3.1415926) to two decimal places - we'll set the width to 1 because we don't need padding, adn the precision to 3, giving us the one number to the left of the decimal and the two numbers to the right:
+
+  ```python
+    print(f"Pi to two decimals places is {3.1415926:1.3}")
+    # Pi to two decimal places is 3.14
+
+    # let's change the width to 10
+    value = 3.1415926
+    width = 10
+    precision = 3
+    print(f"Pi to two decimal places is: {value:{width}.{precision}}")
+    # Pi to two decimal places is:       3.14
+  ```
+  - Note how the second one is padded with extra spaces - the number is four characters long (including the period), so the formatter added six extra spaces to equal the total width of 10.
+
+#### Multiline Strings
+
+Sometimes it's easier to break up large statements into multiple lines. Just prepend every line with `f`:
+
+  ```repl
+    message = (
+      f"Hello, my name is {name}. "
+      f"I can calculate pi to two places: {pi:4.3}. "
+      f"But I would rather be eating {food}."
+    )
+    print(message)
+
+    # Hello, my name is Oscar. I can calculate pi to two places: 3.14. But I would rather be eating pie.
+  ```
+
+#### Trimming a string
+
+Python have some very useful functions for trimming whitespace. `strip()` returns a new string after removing any leading and trailing whitespace. `rstrip()` and does the same but only removes trailing whitespace, and `lstrip()` only trims leading whitespace. We'll print our string inside `><` characters to make it clear:
+
+  ```python
+    my_string = "    Hello World!   "
+
+    print(f">{my_string.lstrip()}<")
+    # >Hello World!    <
+    
+    print(f">{my_string.rstrip()}<")
+    # >     Hello World!<
+
+    print(f">{my_string.strip()}<")
+    # >Hello World!<  
+  ```
+
+Note the different spaces inside of the brackets. These functions also accept an optional argument of characters to remove:
+
+  ```python 
+    my_string = "Hello World!,,,"
+    print(my_string.strip(","))
+    # Hello World!
+  ```
+
+#### Replacing Characters
+
+Strings have a useful function for replacing characters - just call `replace()` on any string and pass in what we want replaced, and what we want to replace it with:
+
+  ```python 
+    my_string = "Hello, world!"
+    my_string.replace("world", "Oscar")    
+    # 'Hello, Oscar!'
+  ```
+
+#### str.format() and % formatting
+
+Python has two older methods of string formatting that we'll probably come across at some point. `str.format()` is the more verbose older cousin to f-strings - variables appear in brackets in the string but must be passed in to the `format()` call. For example:
+
+   ```python 
+    name = "Oscar"
+    print("Hello, my name is {name}".format(name=name))
+    # Hello, my name is Oscar
+  ```
+
+Note that a variable name inside the string is local to the string - it must be assigned to an outside variable inside the `format()` call, hence `.format(name=name)`.
+
+  - %-formatting is a much older method of string interpolating and isn't used much anymore. It's very similar to the methods used in C/C++. Here. we'll use `%s` as our placeholder for a string, and pass the `name` variable in to the formatter by placing it after the `%` symbol.
+
+  ```python
+    name = "Oscar"
+    print("Hello, my name is %s" % name)
+    # Hello my name is Oscar
+  ```
+
+#### Accepting User Input
+
+To Accept basic arguments from the command line, we can use `sys.argv`. `argv` is a list that gets passedd in to our program that contains whatever arguments our program was started with. Start a new Python file called `cli_exercise.py` and enter the following:
+
+  ```python
+    #
+    # user_input.py
+    #
+    import sys
+    args = sys.argv
+    print(args)
+  ```
+
+  ```powershell
+    (env) > python user_input.py
+    ['user_input.py']
+
+    (env) > python user_input.py argument1 argument2 "hello world"
+    ['user_input.py', 'argument1', 'argument2', 'hello world']
+  ```
+
+  - `sys.argv` is never empty - the first element in the list will always be the name of the Python file we're running. Note that the name of the file we're running is rarely useful, so it's common to see this omitted with using slices: `sys.argv[1:]`
+
+  - We can also accept user data inside a running program by using `input`.
+
+  ```python
+    name = input("Hello, what is your name? ")
+
+    birthday_string = input(f"Hello {name}. Please enter your birthday in MM/DD/YYY format: ")
+    
+    print(f"Hello {name}. Your birthday is on {birthday_string}.")
+  ```
+
+## 07. Testing
+
+Thankfully, because of Python's "batteries included" philosophy, all the tools we need for unit testing are included in the standard library. 
+
+Unit testing is a software testing method by which individual functions are tested in an automated fashion to determine if they are fit for use. Automated unit testing not only helps you discover and fix bugs quicker and easier than if we weren't testing, but by writing them alongside or even before our functionsk, they can help us write cleaner and more bug-free code from the very start.
+
+#### Types of Tests
+
+There are several different kinds of automated tests that can be performed at different abstraction levels:
+
+  - **Unit tests** operate on the smallest tesetable unit of code, usually a function that performs a single action or operation.
+  - Integration tests check to see if different units or modules of code work together as a group.
+  - Functiona tests operate on units of functionality, to make sure a specific function of the software is working, which may involve several units of software or whole systems working together.
+
+> Many companies that invest in software development maintain a CI/CD (continuos Integration or Continuos Deployment) pipeline. This usually involves extensive unit tests, integration tests and maybe even functional tests, which are set up to run automatically after (and sometimes even before) code is committed. If the tests fail, deployment can be stopped and the developers notified before broken code ever makes it to production servers. This can be complicated to set up properly, but saves an enormous amount of time in the long run, and helps to keep bugs from ever reaching our users.
+
+#### Assertions
+
+Python comes with an `assert` keyword that we can use for simplr sanity checks. An assertion is simply a boolean expression that checks if its conditions return true or not. If the assertion is true, the program continues, otherwise, it throws an `AssertionError` and the program stops.
+
+  ```python
+    input_value = 25
+    assert input_value < 0
+
+    # Traceback (most recent call last):
+    #   File "<stdin>", line 1, in <module>
+    # AssertionError
+  ```
+
+  *`assert` is for sanity checks, not for production*
+
+  - Assertions can be disabled at run time, by starting the program with `python -o`, so we shouldn't rely on assertions to run in production code. Don't use them for validation!
+
+#### Writing Tests
+
+There are a few different frameworks for writing unit tests in Python, but they're all very similar. We'll focus on the built-in `unittest` library. `unittest` is both a framework for writing tests, as well as a test runner, meaning it can execute our tests and return the results. In order to write `unittest` tests, we must:
+
+  - Write our tests as methods within classes.
+  - Use a series of built-in assetion methods.
+
+*Test Class*
+
+We'll create a `TestMultiply` class that derives from `unittest.TestCase`, with a method inside that does the actual testing. Lastly, we'll call `unittest.main()` to tell `unittest` to find and run out `TestCase`. We'll put all this in a file called `test_multiply.py` and run it from the command line:
+
+  ```python
+    #
+    # test_multiply.py
+    #
+    import unittest
+
+    def multiply(x, y):
+      return x * y
+
+    class TestMultiply(unittest.TestCase):
+
+      def test_multiply(self):
+        test_x = 5
+        test_y = 10
+        self.assertEqual(multiply(test_x, test_y), 50, "Should be 50")
+    
+    if __name__ == "__main__":
+      unittest.main()
+  ```
+
+  ```powershell
+    (env) > python test_multiply.py
+
+    ----------------------------
+    ----------------------------
+    Ran 1 test in 0.000s
+
+    OK
+  ```
+
+*IMPORTANT CONCEPTS*
+
+  - `TestCase` class must subclass `unittest.TestCase`
+  - Names of test functions MUST begin with `test__`, otherwise they won't be run as tests.
+  - Import the code to be tested.
+  - Our `TestCase` class can be calle whatever we want, always subclassing from `unittest.TestCase`
+  - Test code is often placed in a `test.py` file alongside the one to be tested, in smaller projects. For larger ones, we usually want to have mulitple test files inside a test folder. In this case, we'll need to make sure the code to be tested is available on our `PYTHONPATH`
+
+#### Running Tests
+
+We can run test in a file by calling `unittest.main()`:
+
+  ```python
+    # ...
+    if __name__ == "__main__":
+      unittest.main()
+  ```
+
+We can also skip this bit, and call `unittest` directly fron the command line:
+
+  ```powershell
+    (env) > python -m unittest test_module
+  ```
+
+  - Use the `-v` (or `--verbose`) flag, with it we will obtain more information about which test were run.
+
+#### TestCase Assertions
+
+Subclassing the TestCase class gives us a bunch of useful assertions that we can use to check the validity of our code.
+
+Method | Checks that
+---- | ----
+assertEqual(a,b) | a == b
+assertNotEqual(a,b) | a != b
+assertTrue(x) | bool(x) is True
+assertFalse(x) | bool(x) is False
+assertIs(a,b) | a is b
+assertIsNot(a,b) | a is not b
+assertIsNone(x) | x is None
+assertIsNotNone(x) | x is not None
+assertIn(a,b) | a in b
+assertNotIn(a,b) | a not in b
+assertIsInstance(a,b) | isinstance(a,b)
+assertNotIsInstance(a,b) | not isinstance(a,b)
+
+#### Growing Our Tests
+
+Standard `unittest` tests are fine for most projects. As our programs grow and organization becomes more complex, we might want to consider an alternative testing framework or test runner. the 3rd party `nose2` and `pytest` modules are compatible with `unittest` but do things slightly differently.
+
+## 08. Web Frameworks
+
+#### Basic Flask
+
+*Types of Web Frameworks in Python*
+
+  - Django
+
+Django is a full-featured, high-level framework for building web apps. Django focuses on automating as much as possible, an many large-scale sites run on Django.
+
+  - Flask
+
+Flask is a "microframework" for Python, allowing users to make basic backend APIs and webapps with a minimum of code. Flask is easy for beginners and not opinionated.
+
+  - Pyramid
+
+Pyramid is a fast, yet advanced framework, and a successor to the older Pylons framework. Pyramid is open-source and actively developed.
+
+\* There are many more different frameworks for Python.
+
+#### Routing
+
+Flask uses the `route()` decorator to declare routes. For Example, the above code uses `app.route("/")` to declare a route for "/" that resolves to `hello()`, but we can use any path, or even accept variables in our routes:
+
+  - To install Flask:
+
+  ```powershell
+    python -m pip install flask
+  ```
+
+  ```python
+    from flask import Flask
+    app = Flask(__name__)
+
+    @app.route("/my/secret/page")
+    def secret():
+      return "Shh!"
+
+    # <SomeParameter> is the syntax used to handle parameters with Flask
+    # The parameter is passed to the function called visiting this route
+    @app.route("/user/<username>")
+    def user_page(username):
+      return f"Welcome, {username}!"
+
+    @app.route("/blog/post/<int:post_id>")
+    def show_post(post_id):
+      return f"This is the page for post #{post_id}"
+  ```
+
+
+#### Returning Data: Templates & Other Resources
+
+The simplest way to return data is to return a string with `return` at the end of our function. This pushes the string back to the user, who sees it as plain text in thei browser. We'll probably want to make use of HTML in our webapps though, so we'll want to look at template rendering.
+
+  - A template is just an HTML file that lives in a folder called `templates` next to our Flask app Python file. To return an HTML file instead of plain text, Flask provides something called "Templating", through the usage of a function called `render_template()`, which allows us to quickly and easily return a template file and also access variables in it without having to access JS or anything more complex.
+
+    - This function takes the name of the template file to be rendered and any additional (and optional) parameters as arguments. Parameters are what we want to be available in our template to make the content in it dynamic.
+
+  ```python
+    from flask import render_template
+
+    @app.route('/')
+    def index():
+      return render_template('index.html')
+  ```
+
+Flask also supports a template language called `Jinja` that allows us to populate our HTML files with data from our Flask app at render time. A very simple HTML template might look like this:
+
+  ```html
+    <!doctype html>
+    {% if name %}
+      <h1>Hello {{ name }}!</h1>
+    {% else %}
+      <h1>Hello, World!<h1>
+    {% endif %}
+  ```
+
+  - Note the special code in `{% brackets %}, this acts as a very simple programming language. Let's add a matching Flask function:
+
+  ```python
+    from flask import render_template
+
+    @app.route('/hello/')
+    @app.route('/hello/<name>')
+    def hello(name=None):
+      return render_template('hello.html', name=name)
+  ```
+
+*Static files*
+
+  - Serving static files alongside our dynamic Flask code is easy - just create a folder called `static` next to our Flask code, and any files we put in there will be available at `/static/<filename>` 
+
+#### Runnig an Application
+
+In order to run our Python webapp using a Flaks server, we have to set variable environments and run the flask library:
+
+  ```powershell
+  (env) > $env:FLASK_APP = 'my_application'
+  (env) > $env:FLASK_ENV = 'development'
+  (env) > flask run
+  ```
+  - When using bash:
+  
+  ```shell
+  $ export FLASK_APP = my_application
+  $ export FLASK_ENV = development
+  $ flask run
+  ```
+  - the `FLASK_ENV` variable, when set to 'development', allows the usage of the built-in debugger on Flask, which makes very easy to update the webapp when making changes to the code and to see what went wrong when we have an error in our application.
+
+#### Using a Database & Deploying your Web App
+
+Flask provides a useful mechanism for accessing database objects. This makes it easy to use databases to store data for your dynamic webapp. More information is available in the Flask documentation.
+
+Is your app ready for the big time? There are many different options for deploying your Flask app to a real webserver - you can read about some of your options in the Flask documentation.
+
+#### Flask GitHub App
+
+*Installing Requirements*
+
+Our web application has two required external libraries, flask, and requests. As our list of dependencies becomes more complicated, we want to list them in a file called requirements.txt and include it with our project. That way, our code can be reused by others.
+
+Open and look at the requirements.txt file. The name of each dependency is on a new line.
+
+To install all the dependencies from our requirements file, pass the `-r` flag to pip, and the name of the file (in this case, it’s requirements.txt):
+
+  ```powershell
+  (env) > python -m pip install -r requirements.txt
+  ```
+*Folder Structure*
+
+We will start by creating a folder called `day_two_final`, which should have the following structure:
+
+  ```text
+    day_two_final
+    ├── app.py
+    ├── repos
+    │   ├── exceptions.py
+    │   ├── models.py
+    │   └── api.py
+    ├── static
+    │   ├── favicon.png
+    │   └── style.css
+    └── templates
+        ├── error.html
+        └── index.html
+  ```
+
+- exceptions.py
+    
+Let’s start with building a custom exception to handle API errors. Remember that if `response.status_code` is anything but `200`, you can consider that an error. Create a `GitHubApiException` class that subclasses `Exception`:
+  
+  ```python
+    #
+    # exceptions.py
+    #
+    class GitHubApiException(Exception):
+
+    def __init__(self,status_code):
+      if status_code == 403:
+        message = "Rate limit reached. Please wait a minute and try again."
+      else:
+        message = f"HTTP status code was: {status_code}."
+
+      super().__init__(f"A GitHub API error occurred: {message}")
+  ```
+
+- models.py
+
+Next, let’s build our “model”, the `GitHubRepo` class. For this, we want to accept three arguments (`name`, `language`, and `num_stars`) and store them as instance variables (using `self`). Include both a `__str__()` and a `__repr__()` method:
+
+  ```python
+    #
+    # models.py
+    #
+    class GitHubRepo(): 
+
+      def __init__(self, name, language, num_stars):
+        self.name = name
+        self.language = language
+        self.num_stars = num_stars
+
+      def __str__(self):
+        return f"-> {self.name} is a {self.language} repo with {self.num_stars} stars."
+
+      def __repr__(self):
+        return f"GitHubRepo(name={self.name}, language={self.language}, num_stars={self.num_stars}"
+  ```
+
+  - api.py
+
+  ```python
+    #
+    # api.py
+    #
+    import requests
+    from repos.exceptions import GitHubApiException
+    from repos.models import GitHubRepo
+
+    def create_query(languages, min_stars=50000):
+      query = f"stars:>{min_stars} "
+      # Notice we are calling .strip() on each language, to clear it of leading
+      # and trailing whitespace
+      query += " ".join(f"language:{lang.strip()}" for lang in languages)
+      return query
+
+    def repos_with_most_stars(languages, min_stars=40000, sort="stars", order="desc"):
+      gh_api_repo_search_url = "https://api.github.com/search/repositories"
+      query = create_query(languages, min_stars)
+
+      parameters = {"q": query, "sort": sort, "order": order}
+
+      response = requests.get(gh_api_repo_search_url, params = parameters)
+      status_code = response.status_code
+      
+      if status_code != 200:
+        raise GitHubApiException(status_code)
+
+      response_json = response.json()
+      items = response_json["items"]
+      return [GitHubRepo(item["name"], item["language"], item["stargazers_count"]) for item in items]
+
+    if __name__ == "__main__":
+      languages = ["python", "javascript", "ruby"]
+
+      results = repos_with_most_stars(languages)
+
+      for result in results:
+        print(result)
+  ```
+  - app.py
+
+1. Finally, let’s tie it all together with our app.py file. We’ll start off with some boilerplate - we’ll need to import a few things from flask, as well as our `GitHubApiException` and our `repos_with_most_stars()` function.
+
+2. Next, we’ll create the flask `app` object. We’ll also create a list of all the available languages that the user of our web app can choose from. It will help us keep track of if they’re selected or not.
+
+3. Next, we’ll need a function that gets called when the root url for our website, or `/` is requested by the user. We’ll start with the `@app.route()` decorator -this signals to Flask that this `index()` function should be called to handle any `GET` or `POST` requests to the URL `/`.
+
+4. We need to figure out which languages we have selected to determine which repos to display.
+
+  - We’ll check the request.method variable to determine what kind of request it was - if it was a `GET` request, we’ll just display whichever repos were selected last (or all of them if this is the first request). If it’s a `POST`, we’ll grab the `languages` variable from the request form and use it to populate our `selected_languages` list.
+
+5. Now, we just need to get our `results` and render our website. Call the `repos_with_most_stars()` function in api.py and pass it our `selected_languages`. Then, we’ll return our flask `render_template()` function and pass it our list of `selected_languages`, `available_languages`, and our `results`.
+
+6. Finally, we’ll add a custom error handler that renders a special website (`error.html`) if we receive a `GitHubApiException`.
+
+  ```python
+    #
+    # app.py
+    #
+    from flask import Flask, render_template, request
+
+    from repos.api import repos_with_most_stars
+    from repos.exceptions import GitHubApiException
+
+    app = Flask(__name__)
+
+    available_languages = ["Python", "JavaScript", "Ruby", "Java"]
+
+    @app.route("/", methods=["POST", "GET"])
+    def index():
+      if request.method == "GET":
+        # Use the list of all languages
+        selected_languages = available_languages
+      elif request.method == "POST":
+        # Use the languages selected in the request form
+        selected_languages = request.form.getlist("languages")
+
+      results = repos_with_most_stars(selected_languages)
+
+      return render_template("index.html", 
+        selected_languages=selected_languages,
+        available_languages=available_languages,
+        results=results)
+
+    @app.errorhandler(GitHubApiException)
+    def handle_api_error(error):
+      return render_template("error.html", message=error)
+  ```
+
+7. At last, we need to run our app. To do this we need to make sure to be in the root folder `day_two_final` and start the webapp with debug mode.
+
+  ```powershell
+  (env) > $env:FLASK_APP = 'app.py'
+  (env) > $env:FLASK_ENV = 'development'
+  (env) > flask run
+  ```
+#### Bonus: Unit Tests
+
+We need to create a file called `test.py` in the root directory and write some test cases to assert the return query text from the `create_query()` function. Also, we are going to assert the contents of the `GitHubApiException` custom exception class.
+
+  ```python
+    #
+    # test.py
+    #
+    from unittest import TestCase, main
+    from repos.api import create_query
+    from repos.exceptions import GitHubApiException
+
+    class TestCreateQuery(TestCase):
+
+      def test_create_query(self):
+        test_languages = ["R", "C++", "Go"]
+        test_min_stars = 20000
+        expected = "stars:>20000 language:R language:C++ language:Go"
+        result = create_query(test_languages, test_min_stars)
+        self.assertEqual(result, expected, f"Should be {result}")
+
+    class TestGitHubException403(TestCase):
+
+      def test_GitHubApiException(self):
+        test_status_code = 403
+        exception = GitHubApiException(test_status_code)
+        test_existance = "Rate limit" in str(exception)
+        self.assertTrue(test_existance)
+      
+    class TestGitHubApiException500(TestCase):
+
+      def test_GitHubApiException(self):
+        test_status_code = 500
+        exception = GitHubApiException(test_status_code)
+        test_existance = "500" in str(exception)
+        self.assertTrue(test_existance)
+
+    if __name__ == "__main__":
+      main()
+  ```
