@@ -981,7 +981,7 @@ Radix sort is a special sorting algorithm that works on lists of numbers. *It ne
         },{});
         
         nums.forEach(function inBucketsLocator(num) {
-          buckets[getDigit(num, i)].push(num);
+          buckets[getDigit(num, k)].push(num);
         })
 
         ***My implementation of in-place list sorting (based on the assumption the array passed should be modified in-place)
@@ -2015,13 +2015,13 @@ The process of finding a given value in a tree is very similar to inserting one 
       if(!this.root) return undefined;
       let currentNode = this.root;
       while(val !== currentNode.value) {
-          if (val > currentNode.value) {
-            if(!currentNode.right) return undefined;
-            currentNode = currentNode.right;
-          } else {
-            if(!currentNode.left) return undefined;
-            currentNode = currentNode.left;
-          }
+        if (val > currentNode.value) {
+          if(!currentNode.right) return undefined;
+          currentNode = currentNode.right;
+        } else {
+          if(!currentNode.left) return undefined;
+          currentNode = currentNode.left;
+        }
       }
       return currentNode;
     }
@@ -2035,4 +2035,157 @@ Searching | O(log(n))
 
 \* These represents best and average cases. It is important to point out that this big O is not guaranteed for worst case; certain BST configuration, just like a one-sided BST, are very slow, ending up similar to a list/SLL. A way to refactor a one-sided BST picking a different root for the tree.
 
-\* Big O(log(n)) represents the fact that as the numbers of nodes doubles, number of steps to insert/find increases only by 1. 
+\* Big O(log(n)) represents the fact that as the numbers of nodes doubles, number of steps to insert/find increases only by 1.
+
+## 23. Tree Traversal
+
+#### Intro to Tree Traversal
+
+The concept of tree traversal refers to the techniques implmented to visit all nodes from any given tree (plain tree, binary tree, binary heap, etc.) one time. 
+
+  - In contrast with traversing a list (single linked list for example), where we don't have to make any decision in relation with the path we should take (there is only one path when traversing a list)
+
+  - There are many ways of traversing a tree and implementing one approach depends on what we intend with the values from it. 
+
+    - Two of the main ways of traversing a tree are called Breadth-first Search and Depth-first Search. These two difer in the direction we take when looking up each node from the tree.
+
+#### Breadth First Search
+
+It prioritize visiting all nodes on the same level of the tree before continuing a level down. It basically means that we are going to check all sibling nodes from a node before continuing with its children.
+
+*BFS Pseudocode*
+
+  - Create a queue (this can be an array) and a variable to store the values of nodes visited.
+  - Place the root node in the queue.
+  - Loop as long as there is anything in the queue:
+    - Dequeue a node from the queue and push the value of the node into the variable that stores the nodes
+    - If there is a left property on the node dequeued - add it to the queue.
+    - If there is a right property on the node dequeued - add it to the queue.
+  - Return the variable that stores the values.
+
+  ```javascript
+    // ... Could be implemented as a BST method
+    BFS() {
+      let queue = [];
+      let list = [];
+      let node = this.root;
+      if(!node) return undefined;
+      queue.push(node)
+      while(queue.length) {
+        node = queue.shift();
+        list.push(node.value)
+        if(node.left) queue.push(node.left);
+        if(node.right) queue.push(node.right)
+      }
+      return list;
+    }
+    // ...
+  ```
+
+#### Depth First Search
+
+This algorithm (and all of its variations) traverses a given tree from top to bottom, i.e. vertically, down to the end of the tree before visiting siblings, in contrast with BFS where the traversing is done horizontally (all siblings looked up before moving deeper on the tree).
+
+There are three variations of this tree searching algorithm: Pre-order, post-order and in-order.
+
+*DFS Pre-Order Pseudocode*
+
+  - Create a variable to store the values of nodes visited.
+  - Store the root of the BST in a variable called current.
+  - Write a helper function which accepts a node:
+    - Push the value of the node to the variable that stores the values.
+    - If the node has a left property, call the helper function with the left property on the node.
+    - If the node has a right property, call the helper function with the right property on the node.
+  - Invoke the helper function with the current variable.
+  - Return the array of values. 
+
+  ```javascript
+    // ... Could be implemented as a BST method
+    DFSPreOrder() {
+      if(!this.root) return undefined;
+      let list = [];
+      lookUp(list, this.root);
+      return list;
+
+      function lookUp(store, node) {
+        store.push(node.value);
+        if(node.left) lookUp(store, node.left);
+        if(node.right) lookUp(store, node.right);
+      }
+    }
+    // ...
+  ```
+
+*DFS Post-Order Pseudocode*
+  
+  - Create a variable to store the values of nodes visited.
+  - Store the rrot of the BST in a variable called current.
+  - Write a helper function which accepts a node:
+    - If the node has a left property, call the helper function with the left property on the node.
+    - If the node has a right property, call the helper function with the right property on the node.
+    - Push the value of the node to the variable that stores the values.
+  - Invoke the helper function with the current variable.
+  - Return the array of values.
+
+  ```javascript
+    // ... Could be implemented as a BST method
+    DFSPostOrder() {
+      if(!this.root) return undefined;
+      let list = [];
+      lookUp(list, this.root);
+      return list;
+
+      function lookUp(store, node) {
+        if(node.left) lookUp(store, node.left);
+        if(node.right) lookUp(store, node.right);
+        store.push(node.value);
+      }
+    }
+    // ...
+  ```
+
+*DFS In-Order Pseudocode*
+  
+  - Create a variable to store the values of nodes visited.
+  - Store the rrot of the BST in a variable called current.
+  - Write a helper function which accepts a node:
+    - If the node has a left property, call the helper function with the left property on the node.
+    - Push the value of the node to the variable that stores the values.
+    - If the node has a right property, call the helper function with the right property on the node.
+  - Invoke the helper function with the current variable.
+  - Return the array of values.
+
+  ```javascript
+    // ... Could be implemented as a BST method
+    DFSInOrder() {
+      if(!this.root) return undefined;
+      let list = [];
+      lookUp(list, this.root);
+      return list;
+
+      function lookUp(store, node) {
+        if(node.left) lookUp(store, node.left);
+        store.push(node.value);
+        if(node.right) lookUp(store, node.right);
+      }
+    }
+    // ...
+  ```
+
+#### When To Use BFS & DFS
+
+The decision of whether implement BFS or DFS as the tree traversal algorithm for our tree really depends on the situation, based on the shape of the tree we are dealing with.
+
+  - The time complexity regarding one or the other is the same because every node is going to be visited regardless what algorithm is implemented. With respect to space complexity, however, BFS will take more amount of memory (the queue size) when dealing with a wider tree. DFS will require to keep as memory frames (function invocation frames) as levels of depth the tree has. 
+
+#### Recap
+
+  - Trees are non-linear data structures that contain a root and child nodes.
+  - Binary Trees can have values of any type, but at most two children for each parent.
+  - Binary Search Trees are a more specific version of binary trees where every node to the left of a parent is less than it's value and every node to the right is greater.
+  - We can search through trees using BFS and DFS.
+
+## 24. Binary Heaps
+
+#### Intro to Heaps
+
