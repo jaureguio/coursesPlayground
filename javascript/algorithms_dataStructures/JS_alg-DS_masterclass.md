@@ -2189,3 +2189,233 @@ The decision of whether implement BFS or DFS as the tree traversal algorithm for
 
 #### Intro to Heaps
 
+A heap is another category/type of tree; everything that applies to trees, in general, applies to heaps.
+
+A Binary Heap is very similar to a BST, with some slightly different rules which are represented on different types of Binary Heaps:
+
+  - *MaxBinaryHeap*: parent nodes are always larger than child nodes.
+  - *MinBinaryHeap*: parent nodes are always smaller than child nodes.
+
+  \* in both types, there is no order between children of the same node, like in BST where the right child is greater than the left one (even greater than the parent itself)
+
+  *Rules of Binary Heaps*
+
+    - Each parent has at most two child nodes.
+    - The values of each parent node is always greater than its child nodes.
+    - In a max Binary Heap the parent is greater than the children, but there are no guarantees between sibling nodes.
+    - A binary heap is as compact as possible. All the children of each node are as full as they can be and LEFT CHILDREN ARE FILLED OUT FIRST.
+  
+Binary Heaps are used to implement Priority Queues, which are a very commonly used data structure type. They are also used quite a bit with graph traversal algorithms.
+
+#### Representing Heaps
+
+We could implement a Heap creating a custom Tree and node class just as we did before on previous data structures. However, we can implement an array following some mathematical calculation to relate parent nodes with its children and viceversa from within the array structure.
+
+  - For any parent node at an index *n* of an array, the left child is stored at `2n+1` and the right child is at `2n+2`.
+  - For any child node at index *n*, its parent is stored at `Math.floor((n-1)/2)`
+
+The class for our binary heap will be based on a MaxBinaryHeap:
+
+  ```javascript
+    class MaxBinaryHeap() {
+      constructor() {
+        this.values = [];
+      }
+      // Additional methods go in here
+    }
+  ```
+
+#### Heap Insert
+
+When implementing a Binary Heap using an array/list, to insert a new node we first push it to the array. The new node is most likely to be in the wrong spot, so in the case of a max Binary Heap, we would need to bubble the node up to the correct place.
+
+*Binary Heap Insert Pseudocode*
+
+  - Push the value into the values property on the heap. 
+  - Bubble up:
+    - Create a variable called index which is the length of the values property - 1.
+    - Create a variable called `parentIndex` which is the floor of `(index-1)/2`
+    - Keep looping as long as the values element at the `parentIndex` is less than the values element at the child index.
+      - Swap the value of the values element at the `parentIndex` with the value of the element property at the child index.
+      - Set the index to be the `parentIndex`, and start over.
+
+  ```javascript
+    // ...
+    insert(val) {
+      let maxbh = this.values;
+      let currentIdx = maxbh.push(val) - 1;
+      while(currentIdx > 0) {
+        let pIdx = Math.floor((currentIdx-1)/2);
+        let pVal = maxbh[pIdx];
+        if(pVal > val) break;
+        [maxbh[currentIdx], maxbh[pIdx]] = 
+        [maxbh[pIdx], maxbh[currentIdx]]
+        currentIdx = pIdx;
+      }
+    }
+    // ...
+  ```
+
+#### Heap Remove/ExtractMax 
+ 
+The way this method works is similar to insert. The process consist of removing the biggest value from the tree, which happens to be placed in the root or the front of the array/list; before removing the node, it is swapped with the last node on the array/list and then is removed. Because the node swapped with the one removed is likely to be in the incorrect position, it needs to be adjusted/bubble down at an appropiate location in the tree.
+
+  - The procedure for deleting the root from the heap (Effectively extracting the maximum element in a max-heap or the minimum element in a min-heap) and restoring the properties is called down-heap (it is also known as bubble-down, sink-down, percolate-down, shift-down, etc.)
+
+*Removing/extractMax Pseudocode*
+
+  - Swap the first value in the `values` property with the last one.
+  - Pop from the `values` property, so we can return the value at the end (the previous root from the list/array).
+  - Have the new root "sink down" to the correct spot:
+    - The parent index starts at 0 (the root).
+    - Find the index of both child from the parent index (making sure its not out of bounds).
+    - If the left or right child is greater than the element, swap them. If both left and right children are larger, swap the largest child.
+    - The child index swapped to now becomes the new parent index.
+    - Keep looking and swapping until neither child is larger than the element.
+  - Return the root.
+
+  ```javascript
+    // ...
+    extractMax() {
+      let maxbh = this.values;
+      if(!maxbh.length) return undefined;
+      if(maxbh.length === 1) return maxbh.pop();
+      // Swapping the root with the last element in the Heap
+      [maxbh[0], maxbh[maxbh.length-1]] = 
+      [maxbh[maxbh.length-1], maxbh[0]];
+      let max = maxbh.pop()
+      let idxQty = maxbh.length - 1;
+      let currentIdx= 0;
+      let swapped = true
+      while(swapped) {
+        swapped = false;
+        // Calculate the children indices if there are not out of bounce
+        let childIdxL = (2*currentIdx+ 1) <= idxQty ? 2*currentIdx+ 1 : undefined;
+        let childIdxR = (2*currentIdx+ 2) <= idxQty ? 2*currentIdx+ 2 : undefined;
+        // Check to see if both children exist
+        if(childIdxL && childIdxR) {
+          let childL = maxbh[childIdxL]
+          let childR = maxbh[childIdxR]
+          // Determine which children is the largest
+          let greatestChildIdx = Math.max(childL, childR) === childL
+                          ? childIdxL
+                          : childIdxR
+          swapValidator(greatestChildIdx);
+        } else if(childIdxL) {
+          swapValidator(childIdxL);
+        } else if(childIdxR) {
+          swapValidator(childIdxR);
+        }
+      } 
+      function swapValidator(gIdx) {
+        // Check to see if current node should be swapped with the node at index provided
+        if(maxbh[gIdx] > maxbh[currentIdx]) {
+          [maxbh[currentIdx], maxbh[gIdx]] = 
+          [maxbh[gIdx], maxbh[currentIdx]]
+          currentIdx = gIdx;
+          swapped = true;
+        }
+      }
+      return max;
+    }
+    // ...
+  ```
+
+#### Priority Queue
+
+A data structure where each element has a priority. Elements with higher priorities are served before elements with lower priorities.
+
+  - To implement a Priority Queue we can make use of a Binary Heap, specifically a Min Binary Heap (which is commonly used to this purpose in the wild). However, nodes are not just numbers like in the previous implementation of the Heap, but rather they are objects containing a value and a priority properties in it.
+  - The value of the nodes to be added does not matter because the heap will be constructed based on the priority of the node.
+
+*Rules for a Priority Queue* 
+
+  - Its implementation should/could be based on a Min Binary Heap (lower number means higher priority).
+  - Each node has a value and a property. The priority is used to build the heap.
+  - `enqueue` method accepts a value and a priority and makes a new node, putting it in the correct spot based on the priority.
+  - `dequeue` method removes root node, rearranges heap using priority and returns the node removed.
+
+  ```javascript
+    class Node {
+      constructor(val, priority) {
+        this.val = val;
+        this.priority = priority;
+      }
+    }
+
+    class PriorityQueue {
+      constructor() {
+        this.values = []
+      }
+
+      enqueue(val, priority) {
+        const newNode = new Node(val, priority);
+        let PQ = this.values;
+        let currentIdx = PQ.push(newNode) - 1;
+        while(currentIdx > 0) {
+          let pIdx = Math.floor((currentIdx-1)/2);
+          let parent = PQ[pIdx];
+          if(parent.priority < newNode.priority) break;
+          [PQ[currentIdx], PQ[pIdx]] = [PQ[pIdx], PQ[currentIdx]]
+          currentIdx = pIdx;
+        }
+      }
+
+      dequeue() {
+        const PQ = this.values;
+        if(!PQ.length) return undefined;
+        if(PQ.length === 1) return PQ.pop();
+        [PQ[0], PQ[PQ.length-1]] = [PQ[PQ.length-1], PQ[0]]
+        const min = PQ.pop()
+        const idxQty = PQ.length - 1;
+        let idx = 0;
+        let swapped = true
+        while(swapped) {
+          swapped = false;
+          let childIdxL = (2*idx + 1) <= idxQty ? 2*idx + 1 : undefined;
+          let childIdxR = (2*idx + 2) <= idxQty ? 2*idx + 2 : undefined;
+          if(childIdxL && childIdxR) {
+            // The main difference in the Priority Queue implementation is that the priority property is what determines what to swap
+            let childL = PQ[childIdxL].priority;
+            let childR = PQ[childIdxR].priority;
+            // Priority Queues give more priority to lowest values, so we pick the smallest (priority property) node children
+            let smallestChildIdx = Math.min(childL, childR) === childL
+                            ? childIdxL
+                            : childIdxR
+            swapValidator(smallestChildIdx);
+          } else if(childIdxL) {
+            swapValidator(childIdxL);
+          } else if(childIdxR) {
+            swapValidator(childIdxR);
+          }
+        } 
+        function swapValidator(sIdx) {
+          if(PQ[sIdx].priority < PQ[idx].priority) {
+            [PQ[idx], PQ[sIdx]] = [PQ[sIdx], PQ[idx]]
+            idx = sIdx;
+            swapped = true;
+          }
+        }
+        return min;
+      }
+    }
+  ```
+
+#### Big O of Binary Heaps
+
+Binary heaps, both min and max versions of it, are great when talking about insertion and deletion, having a big O of O(log(n)) for time complextity.
+
+  - Each time we go down one step in binary heap (or any binary tree structure), *we have two times the number of nodes*. When inserting a node the algorithm actually has to compare one time per each level of the tree until the correct spot for the node is found; the worst case for a binary heap would be if the node inserted have the greatest/min node when implementing a max/min binary heap version, because the algorithm would go through all the levels of the tree up until the front of the list (remember we have used an array to implement a binary heap)
+    - if we had a tree of 16 nodes and we wanted to insert a node whose value would be the greater in the tree, we would end up making log<sub>2</sub>(16) = 4 comparisons to find the correct spot for the node.
+
+Binary heaps are not made to be searchable; its time complexity is O(n). There is no implied/guaranteed order between siblings so the algorithm would not have a clue when making the decision of which path should take when traversing between levels in the tree. This mean that in the worst case, all nodes would have to be looked up in order to find a given node.
+
+#### Recap
+
+- Binary Heaps are a very useful data structures for sorting, and implementing other data structures like priority queues.
+- Binary Heaps are either MaxBinaryHeaps or MinBinaryheaps with parents either being smaller or larger than their children.
+- With just a little bit of math, we represent heaps using arrays.
+
+## 25. Hash Tables
+
+#### intro to Hash Tables
