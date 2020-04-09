@@ -29,9 +29,7 @@ st = "Create a list of the first letters of every word in this string"
 
 print([word[0] for word in st.split(" ")])
 
-##########################################
-##########################################
-##########################################
+###############################################################
 
 def lesser_of_two_evens(a,b):
   if a % 2 == 0 and b % 2 == 0:
@@ -67,9 +65,7 @@ def has_33(arr):
 has_33([3,4,3,5,7,3,3]) # True
 has_33([3,4,3,5,7,3]) # False
 
-##########################################
-##########################################
-##########################################
+###############################################################
 
 def old_macdonald(name):
   name = list(name.capitalize())
@@ -196,9 +192,7 @@ summer_69([1,3,5])
 summer_69([4,5,6,7,8,9])
 summer_69([2,1,6,9,11])
 
-##########################################
-##########################################
-##########################################
+###############################################################
 
 def spy_game(arr, pattern):
   i = 0
@@ -265,7 +259,7 @@ def up_low(str):
       d["upper"]+=1
     else:
       pass
-  return f"No. of Upper case characters: {d["upper"]}\nNo. of Lower case characters: {d["lower"]}"
+  return f"No. of Upper case characters: {d['upper']}\nNo. of Lower case characters: {d['lower']}"
 
 def unique_list(l):
   new_list = []
@@ -285,9 +279,7 @@ def multiply(numbers):
 
 multiply([5,2,3,-4])
 
-##########################################
-##########################################
-##########################################
+###############################################################
 
 def palindrome(s):
   s = list(filter(lambda i: i.isalpha(), s))
@@ -318,3 +310,149 @@ def ispangram(str1, alphabet=string.ascii_lowercase):
   """
 
 ispangram('The quick brown fox jumps over the lazy dog')
+
+#####################
+####### OOP #########
+#####################
+
+class A:
+  def truth(self):
+    return 'All numbers are even'
+    
+class B(A):
+  def truth(self):
+    return 'Many numbers are even'
+
+class C(A):
+  def truth(self):
+    return 'Some numbers are even'
+
+class D(B,C):
+  def truth(self,num):
+    if num%2 == 0:
+      return A.truth(self)
+    else:
+      return super().truth() 
+      # Python obeys the first method in the chain that defines num. The order followed is [D, B, C, A, object] (following MRO, Method Resolution Order) where object is Python's base object class
+
+d = D()
+d.truth(6) # All numbers are even
+d.truth(5) # Many numbers are even
+
+"""
+Python's built-in super() function provides a shortcut for calling base classes, because it automatically follows Method Resolution Order.
+
+In its simplest form with single inheritance, super() can be used in place of the base class name. Note that we don't pass self to super().__init__() as super() handles this automatically
+"""
+
+###############################################################
+
+class Line:
+  def __init__(self,coord1,coord2):
+    self.x1, self.y1 = coord1
+    self.x2, self.y2 = coord2
+  def distance(self):
+    return ((self.x2-self.x1)**2+(self.y2-self.y1)**2)**0.5
+  def slope(self):
+    return (self.y2-self.y1)/(self.x2-self.x1)
+
+line = Line((3,2),(8,10))
+
+###############################################################
+
+# from math import pi
+class Cylinder:
+  def __init__(self,height=1,radius=1):
+    self.height = height
+    self.radius = radius
+  def volume(self):
+    return pi*self.radius**2*self.height
+  def surface_area(self):
+    return 2*pi*self.radius*self.height + 2*pi*self.radius**2
+
+c = Cylinder(2,3)
+
+###############################################################
+
+class Account:
+  def __init__(self,owner,balance):
+    self.owner = owner
+    self.balance = balance
+  
+  def __str__(self):
+    return f"Account owner: Oscar\n Account balance: ${self.balance}"
+
+  def deposit(self,amount):
+    self.balance += amount
+    return f"Funds successfully added to {self.owner}'s account. Current balance is ${self.balance}"
+  
+  def withdraw(self,amount):
+    total = self.balance - amount
+    if total < 0:
+      return f"Not enough funds in {self.owner}'s account. Current balance is ${self.balance}"
+    else:
+      self.balance = total
+      return f"Thanks for preferring us {self.owner}. Your balance now is: ${self.balance}"
+  
+acct1 = Account('Oscar', 5000)
+acct1.deposit(4000)
+acct1.withdraw(2500)
+acct1.withdraw(25000)
+
+#####################
+##### Errors & ######
+##### Exception ##### 
+##### Handling ######
+#####################
+
+# Handle the exception thrown by the code below by using try and except blocks
+for i in ['a','b',3,4,'c']:
+  try:
+    print(i**2)
+  except TypeError as e:
+    print(f"{i} cannot be exponentiated. Error: {e}")
+
+# Write a function that asks for an integer and prints the square of it. Use a while loop with a try, except, else block to account for incorrect inputs
+def ask():
+  while True:
+    try:
+      integer = int(input("Input an integer: "))
+    except:
+      print("An error occured! Please try again!\n")
+    else:
+      print(f"Thank you, your number squared is: {integer**2}")
+      break
+  
+  # Lecture's Solution
+  """
+  waiting = True
+  while waiting:
+    try:
+      n = int(input("Enter a number: "))
+    except:
+      print("Please try again!\n")
+      continue
+    else:
+      waiting = False
+  print("Your number squared is:")
+  print(n**2)
+  """
+
+ask()
+
+#####################
+#### Decorators #####
+#####################
+
+def decorator(func_to_decorate):
+  def decorated_func():
+    print('before function to decorate')
+    return func_to_decorate()
+  return decorated_func
+
+@decorator
+def my_func():
+  return 'Hello! I want to be decorated'
+
+my_func() 
+# prints 'before function to decorate' and returns 'Hello! I want to be decorated'
