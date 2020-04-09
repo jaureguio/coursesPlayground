@@ -348,7 +348,9 @@ Python comes with built-in methods to allow us to inspect objects and determine 
 
 #### __str__ & __repr__
 
-Python comes with two methods that allow us to get the string (`str(obj)`) representation of an object and the instruction needed to tell Python to create an instance from a given object/class (`repr(obj/cls)`)
+Python comes with two "magic" methods that allow us to get the string (`str(obj)`) representation of an object and the instruction needed to tell Python to create an instance from a given object/class (`repr(obj/cls)`)
+
+  - These methods have to be defined immediatelly after the constructor for the class, or before any custom method defined by us.
 
  ```python
   import datetime
