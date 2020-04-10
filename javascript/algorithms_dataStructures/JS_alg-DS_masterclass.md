@@ -1667,7 +1667,7 @@ A stack is a LIFO data structure. The last element added to the stack will be th
   - Undo / Redo.
   - Routing (the history object) is treated like a stack: frontend libraries like React use a stack to model the history of the pages viewed.
 
-###### Stack Class
+*Stack Class*
 
   ```javascript
     class Node {
@@ -1687,7 +1687,7 @@ A stack is a LIFO data structure. The last element added to the stack will be th
     }
   ```
 
-###### Pushing
+*Pushing*
 
 Add a value to the *top* (front) of the stack.
 
@@ -1717,7 +1717,7 @@ Add a value to the *top* (front) of the stack.
     // ...  
   ```
 
-###### Pop
+*Pop*
 
 Remove a value from the *top* of the stack.
 
@@ -1743,14 +1743,14 @@ Remove a value from the *top* of the stack.
     }
     // ...  
   ```
-###### Big O of Stacks
+*Big O of Stacks*
 
 Insertion | O(1)
 Removal |O(1)
 Searching | O(n)
 Access | O(n)
 
-###### Recap on Stacks
+*Recap on Stacks*
 
   - Stacks are a LIFO data structure where the last value in is always th first one out.
   - Stacks are used to handle function invocations (the call stack), for operations like undo/redo, for routing and much more.
@@ -1785,7 +1785,7 @@ A Queue is a first-in first-out (FIFO) data structure.
     }
   ```
 
-###### Enqueue
+*Enqueue*
 
 Add a value to the back of the queue.
 
@@ -1813,7 +1813,7 @@ Add a value to the back of the queue.
     // ... 
   ```
 
-###### Dequeue
+*Dequeue*
 
 Remove a value from the from of the queue.
 
@@ -1842,14 +1842,14 @@ Remove a value from the from of the queue.
     // ... 
   ```
 
-###### Big O of Queues
+*Big O of Queues*
 
 Insertion | O(1)
 Removal |O(1)
 Searching | O(n)
 Access | O(n)
 
-###### Recap on Queues
+*Recap on Queues*
 
 - Queues are a FIFO data structure, all elements are first in, first out.
 - Queues are useful for processing tasks and are foundational for more complex data structures.
@@ -2419,3 +2419,208 @@ Binary heaps are not made to be searchable; its time complexity is O(n). There i
 ## 25. Hash Tables
 
 #### intro to Hash Tables
+
+They are a data structure very commonly used in programming, to the point of being a built-in DS in other programming languages like Python, Java, amongst other.
+
+Hash tables are used to store *key-value* pairs. They are like arrays, but the keys are not ordered.
+
+  - Unlike arrays, hash tables are fast for all of the following operations: finding values, adding new values, and removing values. Its usage is because of its speed.
+
+  - In cases where our data doesn't fit to be associated to numbers in order to be stored (commonly done when implementing arrays for example), we could use a hash map or hash table. We want to be able to access our data using human-readable keys. This is achieved using a hash table.
+
+#### Hash Table Considerations
+
+We are going to be implementing a hash table by means of an array. In order to look up values by key, we need a way to *convert keys into valid array indices*. A function that performs this task is called a *hash function*.
+
+  - If we have an array with indices from 0 to 9 and we want to store a key-value pair in any of these spots, first we transform the key into a value ranging from 0 to 9, using a hash function, and then we store the key-value pair in the given index.
+
+#### Hash Function
+
+*Wikipedia definition:*
+
+> A hash function is any function that can be used to map data of arbitrary size to data of a fixed size. The values returned by a hash function are called *hash values, hash codes, digests*, or simply *hashes*. They are often used in combination with hash tables, a common data structure used in compure software for data lookup. Hash functions accelerate table or databases lookup by detecting duplicated records in a large file. They are also used in cryptography.
+
+What makes a good hash function? (not a cryptographically secure one):
+
+  1. Fast (i.e. constant time).
+  2. Doesn't cluster outputs at specific indices, but distributes uniformly. A hash function is useless is every given input returns the same output (we might have collision, which are handle in two commonly ways next explored).
+  3. Deterministic (same input yields same output).
+  4. Inputs of any size must generate outputs of a fixed size.
+  5. Original key must be unaccessible from the hashed value returned by the hash function.
+
+#### Hash Function Implementation
+
+A naive implementation of a hashing function could take a string of any size and based on the ASCII code of each letter, produce a number ranging within the length of certain array:
+
+  ```javascript
+    function hash(str, arrLen) {
+      let value = 0;
+      for(let s of str) {
+        let code = s.charCodeAt(0) - 96;
+        value = (value + code) % arrLen;
+      }
+      return value;
+    }
+  ```
+
+  - Problems with this hash function implementation:
+    1. Only hashes strings.
+    2. Not constant time - linear in key length.
+    3. It is not random enough (specifically when dealing with shorter array lengths).
+
+An improved version of the above hash function, accounting for problems `2` and `3` stated above, is as follows:
+
+  ```javascript
+    function hash(key, arrLen) {
+      let value = 0;
+      let WEIRD_PRIME = 31;
+      for(let i = 0; i < Math.min(key.length,50); i++) {
+        let s = key[i];
+        let code = s.charCodeAt(0) - 96;
+        value = (value*WEIRD_PRIME + code) % arrLen;
+      }
+      return value;
+    }
+  ```
+
+  - The `for..loop` with a max num of iterations (50 in this case), the `WEIRD_PRIME` and the use of an array with a prime length applied with/to the improved hash function are helpful in spreading out the keys more uniformly. The usage of a prime variable and a prime array length have mathematical implications on why they are helpful improving the hashed result.
+
+#### Handling Collisions
+
+When we have a hash function and a set of data is pretty common to have some hashed keys collisions, *even with a larger array and a great hash function. Collision are inevitable.
+
+There are many strategies to deal with collisions in hash tables. Two of these are: 
+
+  1. Separate Chaining.
+
+    - With this strategy, at each index in our array we store values using a more sophisticated data structure (e.g. an array or a linked list). This allows us to store multiple key-value pairs at the same index.
+
+  2. Linear Probing.
+
+    - When we find a collision, we search through the array to find the next empty slot. Unlike with separate chaining, this allows us to store a single key-value at each index.
+
+#### Hash Table Class - Set & Get
+
+A hash table class could be represented as follows:
+
+  ```javascript
+    class HashTable {
+      constructor(size=53) {
+        this.keyMap = new Array(size)
+      }
+
+      _hash(key) {
+        let value = 0;
+        let WEIRD_PRIME = 31;
+        for(let i=0; i < Math.min(key.length,50); i++) {
+          let s = key[i]
+          let code = s.charCodeAt(0) - 96;
+          value = (value*WEIRD_PRIME + code) % this.keyMap.length;
+        }
+        return value;
+      }
+
+      // Additional methods go here
+    }
+  ```
+
+*Set/Get Pseudocode*
+
+*Set*:
+
+  - Accepts a key and a value.
+  - Hashes the key.
+  - Stores the key-value pair in the hash table array via separate chaining.
+
+*Get*:
+
+  - Accepts a key.
+  - Hashes the key.
+  - Retrieves the key-value pair in the hash table.
+  - If the key isn't found, returns `undefined`.
+
+  ```javascript
+    // ...
+    set(key, value) {
+      let hashedKey = this._hash(key);
+      if (!this.keyMap[hashedKey]) {
+        this.keyMap[hashedKey] = []
+      }
+      this.keyMap[hashedKey].push([key,value]);
+      return this.keyMap;
+    }
+
+    get(key) {
+      let hashedKey = this._hash(key);
+      let slot = this.keyMap[hashedKey];
+      if(slot) {
+        let idx = slot.findIndex(([k]) => k == key);
+        if (idx >= 0) return slot[idx][1]
+      }  
+      return undefined;
+    }
+    // ...
+  ```
+
+#### Hash Table Class - Keys & Values
+
+*Keys/Values Pseudocode*
+
+*Keys:*
+
+  - Loops through the hash table array and returns an array of keys in the table.
+
+*Values:*
+
+  - Loops through the hash table array and returns an array of UNIQUE values in the table.
+
+  ```javascript
+    // ...
+    keys() {
+      let keys = [];
+      for(let spot of this.keyMap) {
+        if(!spot) continue
+        for(let [key] of spot) {
+          // Although duplicated keys should not be added into a hash table, this guard ensures we skip any possible duplicate key
+          if(!keys.includes(key)) {
+            keys.push(key)
+          }
+        }
+      }
+      return keys;
+    }
+
+    values() {
+      let values = [];
+      for(let spot of this.keyMap) {
+        if(!spot) continue
+        let it = 0
+        for(let [_, value] of spot) {
+          if(!values.includes(value)) {
+            values.push(value)
+          }
+        }
+      }
+      return values;
+    }
+  ```
+
+#### Big O of Hash Tables
+
+On average and best case, the Big O for operations on a Hash table is constant time:
+
+Insertion | O(1)
+Deletion | O(1)
+Access | O(1)
+
+ \* This really comes down to how fast is and how evenly distributes things (and how effectively handles collisions, following a given strategy) the hash function implemented.
+
+#### Recap
+
+  - Hash tables are commonly built-in data structure in many languages (JS's objects and maps are similar to hash tables, specially the latters).
+  - Hash tables are collections of key-value pairs.
+  - Hash tables can find values quickly given a key.
+  - Hash tables can add new key-values quickly.
+  - Hash tables store data in a large array, and work by *hashing* the keys.
+  - A good hash should be fast, distribute keys uniformly, and be deterministic.
+  - Separate chaining and linear probing are two strategies used to deal with two keys that hash to the same index.
