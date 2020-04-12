@@ -2624,3 +2624,218 @@ Access | O(1)
   - Hash tables store data in a large array, and work by *hashing* the keys.
   - A good hash should be fast, distribute keys uniformly, and be deterministic.
   - Separate chaining and linear probing are two strategies used to deal with two keys that hash to the same index.
+
+## 26. Graphs
+
+#### Intro to Graphs
+
+A graph data structure consists of a finite (and possibly mutable) set of vertices or nodes or points, together with aset of unordered pairs of these vertices for an undirected graph or a set of ordered pairs for a directed graph.
+
+*Uses for Graphs:*
+
+  - Social Networks.
+  - Location/Mapping.
+  - Routing Algorithms.
+  - Visual Hierarchy.
+  - File System Optimizations.
+  - Everywhere!
+
+#### Types of Graphs
+
+*Essential Graph Terms:*
+
+  - Vertex: commonly referred to as node.
+  - Edge: connection between nodes.
+  - Weighted/Unweighted: values assigned to distances between vertices.
+  - Directed/Undirected: directions assigned to distance between vertices.
+
+#### Representing a Graph
+
+There exists two popular and standard approaches to represent a Graph: adjacency matrix and adjacency list.
+
+*Adjacency Matrix*
+
+  - A matrix is a two-dimensional structure, commonly represented by *nested arrays*, where information is stored in rows and colums.
+  - Edge connection is what is stored in the adjacency matrix. The existance of a connection between nodes/vertices is represented commonly with 0's and 1's, although we could use True and False Booleans, or even "Yes" and "No" strings.
+  - The following adjacency matrix represents a undirected Graph; connections are two-sided, i.e. an edge between two nodes can be traversed from one or the other node the next in the edge.
+
+     | A | B | C | D | E | F
+   A | 0 | 1 | 0 | 0 | 0 | 1
+   B | 1 | 0 | 1 | 0 | 0 | 0
+   C | 0 | 1 | 0 | 1 | 0 | 0
+   D | 0 | 0 | 1 | 0 | 0 | 0
+   E | 0 | 0 | 0 | 1 | 0 | 1
+   F | 1 | 0 | 0 | 0 | 1 | 0
+
+*Adjacency List*
+
+  - An array or list is used to store the edges a given node/vertex has connecting to other node. Each index in the array represents a particular node, and an array at that index contains the index assign to other vertices that are connected with the former. This implementation works when node's representation are numeric and has a given order.
+
+  ```javascript
+    [
+    // index 0  
+      [1,5],
+    // index 1
+      [0,2],
+    // index 2
+      [1,3],
+    // index 3
+      [2,4],
+    // index 4
+      [3,5],
+    // index 5
+      [4,0]
+    ]
+  ```
+
+  - A hash table can be implemented to represent an adjacency list when nodes are not identified by numbers or have no order associated between them. Also if there are hugh gaps between them. A key-value structure is used to store individual vertices ID as key and its related nodes (making connections with the current node as key) as values in an array/list.
+
+  ```javascript
+    {
+      A: ["B", "F"],
+      B: ["A","C"],
+      C: ["B","D"],
+      D: ["C", "E"],
+      E: ["D","F"],
+      F: ["E", "A"]
+    }
+  ```
+
+#### Differences & Big O
+
+  - |V| - number of vertices
+  - |E| - number of edges
+
+Operation | Adjacency List | Adjacency Matrix
+Add Vertex | O(1) | O(|V<sup>2</sup>|)
+Add Edge | O(1) | O(1)
+Remove Vertex | O(|V|+|E|) | O(|V<sup>2</sup>|)
+Remove Edge | O(|E|) | O(1)
+Query | O(|V|+|E|) | O(1)
+Storage | O(|V|+|E|) | O(|V<sup>2</sup>|)
+
+- Adding a new vertex to a Graph represented as an Adjacency Matrix means not only adding one slot in, but also an entire row and an entire column. 
+- With an Adjacency List representation the size of the Graph is govern by how many ACTUAL edges/connections we have. With the adjacency matrix, even when a new vertex added only has 1 connection to an existing vertex on the Graph, a new entire row and column representing connections with all the other nodes (represented as 0's, because theres no real connection which additional nodes) is required.
+
+*List vs Matrix*
+
+Adjacency List | Adjacency Matrix
+Can take up less space (in sparse graphs) | Takes up more space (in sparse graphs)
+Faster to iterate over all edges | Slower to iterate over all edges (we would need to iterate through a bunch of unexisting edges)
+Can be slower to lookup specific edge (we would need to first request a specific node and then iterate through its list of connected nodes to see if there exist a given edge with the latter node) | Faster to lookup specific edge (we know the position for every node in the matrix, if 1 is found in the query slot, then a connection/edge exist)
+
+We are going to model Graphs using an Adjacency List; most data in the real-world tends to lend itself to sparser and/or larger graphs.
+
+  - If our data ends up being compact regarding to its connections (vast majority of our nodes are connected one to another), we could prefer to implement an Adjacency Matrix.
+
+#### Graph Class
+
+We are going to be implementing an Undirected Graph (switching to a Directed Graph is very easy) by means of an Adjacency List.
+
+  ```javascript
+    class Graph {
+      constructor() {
+        this.adjacencyList = {} 
+      }
+    }
+    // Additional methods go here
+  ```
+
+*Adding a Vertex Pseudocode*
+
+  - Write a method called addVertex, which accepts the name of a verted to be added to the graph.
+  - It should add a key to the adjacency list with the name of the vertex and set its value to be an empty array.
+
+  ```javascript
+    // ...
+    addVertex(vertex) {
+      if(!this.adjacencyList[vertex]) {
+        this.adjacencyList[vertex] = [];
+      }
+      return this
+    }
+    // ...
+  ```
+
+*Adding an Edge*
+
+  - This function should accept two vertices, we can call them vertex1 and vertex2.
+  - The function should find in the adjacency list the key of vertex1 and push vertex2 to the array.
+  - The function should find in the adjacency list the key of vertex2 and push vertex1 to the array.
+
+  ```javascript
+    // ...
+    addEdge(vertex1, vertex2) {
+      if(
+        this.adjacencyList[vertex1] ||
+        this.adjacencyList[vertex2]
+      ) return "One of the vertex was not found in the Graph";
+      this.adjacencyList[vertex1].push(vertex2);
+      this.adjacencyList[vertex2].push(vertex1);
+      return this
+    }
+    // ...
+  ```
+
+*Removing an Edge*
+
+  - This function should accept two vertices (vertex1 and vertex2 for example).
+  - The function should reassign the key of vertex1 to be an array that does not contain the vertex2.
+  - Repeat the process for vertex2 edge's array.
+
+  ```javascript
+    // ...
+    removeEdge(vertex1, vertex2) {
+      if(
+        !(this.adjacencyList[vertex1] &&
+          this.adjacencyList[vertex2])
+      ) return "One of the vertex was not found in the Graph";
+      this.adjacencyList[vertex1] = 
+      this.adjacencyList[vertex1].filter(vertex => vertex !== vertex2);
+      this.adjacencyList[vertex2] = 
+      this.adjacencyList[vertex2].filter(vertex => vertex !== vertex1);
+      return this;
+    }
+    // ...
+  ```
+
+*Removing a Vertex*
+
+  - The function should accept a vertex to remove.
+  - The function should loop as long as there are any other vertices in the adjacency list for that vertex.
+  - Inside of the loop, call our removeEdge function with the vertex we are removing and any values in the adjacency list for that vertex.
+  - Delete the key in the adjacency list for that vertex.
+
+  ```javascript
+    // ...
+    removeVertex(vertexToRemove) {
+      if(!this.adjacencyList[vertexToRemove]) return "Vertex not found in the Graph";
+      while(this.adjacencyList[vertexToRemove].length) {
+        let adjacentVertex = this.adjacencyList[vertexToRemove].pop();
+        this.removeEdge(vertexToRemove, adjacentVertex);
+      }
+      delete this.adjacencyList[vertexToRemove];
+      return this;
+    }
+
+    /* 
+    My naive solution (less performant? maybe not, but this logic is less efficient; we already know what are the edges from the info on the vertexToRemove, which has all adjacentVertex in it)
+    if(!this.adjacencyList[vertexToRemove]) return "Vertex not found in the Graph";
+
+    removeVertex(vertexToRemove) {
+      for(let [vertex,edges] of Object.entries(this.adjacencyList)) {
+        if(edges.includes(vertexToRemove)) {
+          this.removeEdge(vertex,vertexToRemove);
+        }
+      }
+      delete this.adjacencyList[vertexToRemove];
+      return this;
+    }
+    */
+    // ...
+  ```
+
+## 27. Graph Traversal
+
+#### Intro to Graph Traversal
+
