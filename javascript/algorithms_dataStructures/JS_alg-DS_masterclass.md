@@ -2634,6 +2634,9 @@ A graph data structure consists of a finite (and possibly mutable) set of vertic
 *Uses for Graphs:*
 
   - Social Networks.
+  - Peer to peer networking.
+  - Finding "closest" matches/recommendations.
+  - Shortest path problems (GPS navigation, solving mazes, AI(shortest path to win a game)).
   - Location/Mapping.
   - Routing Algorithms.
   - Visual Hierarchy.
@@ -2838,4 +2841,207 @@ We are going to be implementing an Undirected Graph (switching to a Directed Gra
 ## 27. Graph Traversal
 
 #### Intro to Graph Traversal
+
+Graph traversal, in the broader sense of it, means visiting/updating/checking each vertex in a graph. Usually in real-world applications, we may not be visiting every single node; a lot of what we end up doing is related with finding nearest or similar neighbors, shortest path from one vertex to another (gps directions), amongst others.
+
+  - When traversing a graph, we need to specify a starting point. In constrast with trees, in graphs we don't have a root node specified.
+  - There are two main approaches to traverse a Graph: DFS and BFS.
+
+#### Depth First Graph Traversal
+
+This approach means that we should explore as far down as possible one "branch" (in a graph, vertex does not have branches in the strict sense but neighbors) of the graph before "backtracking".
+
+  - Deepening of the traversal is prioritized rather than widening. This means that we are going to visit the neighbors of the starting vertex, and then the neighbors of the neighbor already visited. 
+
+*DFS Pseudocode*
+
+- *Recursive (using the call stack to manage / keep track of our state / where we are going and where we have come from)*
+
+  - The function should accept a starting node.
+  - Create a list to store the end result, to be returned at the very end.
+  - Create an object to store visited vertices.
+  - Create a helper function which accepts a vertex:
+    - The helper function should return early if the vertex is empty.
+    - The helper function should place the vertex it accepts into the visited object and push that vertex into the result array.
+    - Loop over all of the values in the adjacencyList for that vertex.
+    - If any of those values have not been visited, recursively invoke the helper function with that vertex.
+  - Invoke the helper function with the starting vertex.
+  - Return the result array.
+
+  - Another pseudocode representation:
+  ```
+    DFS(vertex):
+      if vertex is empty
+        return (this is the base case)
+      add vertex to results list
+      mark vertex as visited
+      for each neighbor in vertex's neighbors:
+        if neighbor is not visited:
+          recursively call DFS on neighbor
+  ```
+  
+  ```javascript
+    depthFirstRecursive(start) {
+      const results = [];
+      const visited = {};
+      const dfs = vrtx => {
+        if(!this.adjacencyList[vrtx]) return;
+        results.push(vrtx);
+        visited[vrtx] = true;
+        this.adjacencyList[vrtx].forEach(neighbor => {...})
+        for(let neighbor of this.adjacencyList[vrtx]) {
+          if(!visited[neighbor]) dfs(neighbor);
+        }
+      }
+      dfs(start);
+      return results;
+    }
+
+    /*
+    Implementation using function declaration, IIFE and explicit this keyword binding
+
+    depthFirstRecursive(start) {
+      ...
+      (function dfs(vrtx) {
+        if(!this.adjacencyList[vrtx]) return;
+        visited[vrtx] = true;
+        for(let neighbor of this.adjacencyList[vrtx]) {
+          if(!visited[neighbor]) dfs.call(this, neighbor);
+        }
+      }.bind(this))(start)
+      return Object.keys(visited);
+
+      /* 
+      Although we are binding the 'this' keyword on the dfs's IIFE, the binding just accounts for the first call to dfs (it is like if we wrote 'function dfs... dfs.call(this,start)', i.e. just a one time binded call of dfs). Subsequent recursive calls will lookup the definition of dfs in outer scope and run it without the binding of 'this' to the adjacencyList object, so thats why the recursive call site has to be explicitly binded with ".call(this)"
+
+      Another implementation could be made without the IIFE of dfs, keeping just the plain function declaration of it, just to reassing the dfs variable to the dfs function binded to 'this', which in this case would be the adjacencyList object
+      */
+    }
+    */
+  ```
+
+- *Iterative (using a Stack data structure itself; a JS array in this case to simplify):*
+  - The function should accept a starting node.
+  - Create a stack to help use keep track of vertices (use a list/array)
+  - Create a list to store the end result, to be returned at the very end.
+  - Create an object to store visited vertices.
+  - Add the starting vertex to the stack, and mark it visited.
+  - While the stack has something in it:
+    - Pop the next vertex from the stack.
+    - If that vertex hasn't been visited yet:
+      - Mark it as visited.
+      - Add it to the result list.
+      - Push all of its neighbors into the stack.
+  - Return the result array.
+
+  - Another pseudocode representation:
+  ```
+    DFS-iterative(start):
+      let S be a stack (the stack is used to maintain the order of things we have been to and also where we need to go  back and visit other neighbors)
+      S.push(start)
+      while S is not empty
+        vertex = S.pop()
+        if vertex is not labeled as discovered:
+          visit vertex (add to result list)
+          label vertex as discovered
+          for each of vertex's neighbbors, N do
+            S.push(N)
+  ```
+
+  ```javascript
+    // ...
+    depthFirstIterative(start) {
+      const stack = [start];
+      const results = [];
+      const visited = {[start]: true};
+      while(stack.length) {
+        let vrtx = stack.pop();
+        results.push(vrtx);
+        for(let neighbor of this.adjacencyList[vrtx]) {
+          if(!(neighbor in visited)) {
+            visited[neighbor] = true;
+            stack.push(neighbor);
+          }
+        }
+      }
+      return results;
+    }
+
+    /*
+    My implementation (an iteration of the while loop gets performed for elements already visited, which makes the algorithm less efficient than the lecture's one):
+
+    depthFirstIterative(start) {
+      const stack = [start];
+      const results = [];
+      const visited = {};
+      while(s.length) {
+        let vrtx = stack.pop();
+        if(!(vrtx in visited)) {
+          visited[vrtx] = true;
+          results.push(vrtx);
+          for(let neighbor of this.adjacencyList[vrtx]) {
+            stack.push(neighbor);
+          }
+        }
+      }
+      return results;
+    }
+    */
+    // ...
+  ```
+
+#### Breadth First Graph Traversal
+
+Breadth First prioritizes visiting all neighbors at a given depth in the graph before moving "downwards" (a direction cannot be implied in graphs because the starting point is not know by default) or visiting neighbors of neighbors (children of children in a tree).
+
+  - In graphs, there's a term called height (or layers) which is used to keep track of the depth from a given vertex. All the nodes at the same height (belonging to the same layer) is going to be visited before increasing the height value.
+  - Height can be thought of as the steps needed to reach a given set of nodes from the vertex the algorithm starts traversing the graph from.
+  - The implementation of this traversing approach differs with DFS on the fact that it uses different methods to manipulate the data structure used to keep track of the elements/nodes to be visited next. The algorithm should handle the DS as a queue, i.e. FIFO ordering, so the methods to manipulate it should be push() and shift(), in the case an array is used. We could implement a SLL to improve performance.
+
+*Breadth First Pseudocode*
+
+  - This function should accept a starting vertex.
+  - Create a queue (we can use an array) and place the starting vertex in it.
+  - Create an array to store the nodes visited.
+  - Create an object to store nodes visited.
+  - Mark the starting vertex as visited.
+  - Loop as long as there is anything in the queue:
+    - Remove the first vertex from the queue and push it into the array that stores nodes visited.
+    - Loop over each vertex in the adjacencyList for the vertex we are visiting:
+      - If it is not inside the object that stores nodes visited, mark it as visited and enqueue that vertex.
+  - Once the looping has been finished, return the array of visited nodes.
+
+  ```javascript
+    // ...
+    breadthFirstIterative(start) {
+      const queue = [start];
+      const results = [];
+      const visited = {[start]: true};
+      let vertex;
+      while(queue.length) {
+        vertex = queue.shift();
+        results.push(vertex);
+        for(let neighbor of this.adjacencyList[vertex]) {
+          if(!visited[neighbor]) {
+            visited[neighbor] = true;
+            queue.push(neighbor);
+          }
+        }
+      }
+      return results;
+    }
+
+    /*
+    breadthFirstIterative(start) {
+      //TODO
+    }
+    */
+
+    // ...
+  ```
+
+## 28. Dijkstra's Algorithm
+
+#### Intro to Djkstra's
+
 
