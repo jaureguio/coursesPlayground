@@ -2770,8 +2770,8 @@ We are going to be implementing an Undirected Graph (switching to a Directed Gra
     // ...
     addEdge(vertex1, vertex2) {
       if(
-        this.adjacencyList[vertex1] ||
-        this.adjacencyList[vertex2]
+        !(this.adjacencyList[vertex1] &&
+        this.adjacencyList[vertex2])
       ) return "One of the vertex was not found in the Graph";
       this.adjacencyList[vertex1].push(vertex2);
       this.adjacencyList[vertex2].push(vertex1);
@@ -3042,6 +3042,198 @@ Breadth First prioritizes visiting all neighbors at a given depth in the graph b
 
 ## 28. Dijkstra's Algorithm
 
-#### Intro to Djkstra's
+#### Dijkstra's Algorithm
+
+Edsger Dijkstra was a Dutch programmer, physicist, essayist, amongst other things, who helped to advance the field of computer science from an 'art' to an academic discipline. He has had established a lot of the academic 'rigor' that's present in computer science today. 
+
+> Dijkstra wrote around six of the thirty "most influential" papers in CS community.
+
+One of its invented algorithms, the one known by Dijkstra's Algorithm, is one of the most famous and widely used around the CS community. It finds the shortest path between two vertices on a graph.
+
+To implement the algorithm, we are going to make use of a weighted graph, a priority queue and some additional data structures like arrays/lists and objects/dicts.
+
+#### Weighted Graph
+
+To correctly implement this algorithm, we will need to make use of a weighted graph. The difference in the implementation of this variation of graphs with respect to an unweighted one is that we not only store a reference of some kind to each adjacent nodes from a particular one for each edge, but also a value representing some sort of measure regarding the edge between adjacent nodes. This value could be a physical distance, a number of friends in common, airplane ticket prices, traffic measures, etc.
+
+  ```javascript
+    class WeightedGraph {
+      constructor() {
+        this.adjacencyList = {};
+      }
+      addVertex(vertex) {
+        if(!this.adjacencyList[vertex]) this.adjacencyList[vertex] = [];
+        return this;
+      }
+      addEdge(vertex1, vertex2,weight) {
+        if(
+          !(this.adjacencyList[vertex1] && 
+          this.adjacencyList[vertex2])
+        ) return "One of the vertex was not found in the graph"
+        this.adjacencyList[vertex1].push({node: vertex2, weight});
+        this.adjacencyList[vertex2].push({node: vertex1, weight});
+        return this;
+      }
+    }
+    // methods related to the Dijkstra Algorithm go here
+  ```
+
+#### Walking Through the Algorithm
+
+We could take the following example to explain each step on the algorithm.
+
+Given the following graph, find the shortest path from A to E:
+
+     (A)_____4_____(B)
+     /               \
+    2                 4
+   /                   \
+  (C)___2___(D)___3____(E)
+    \        |         /
+     4       1        1
+      \      |       /
+       |____(F)_____|
+
+*The Approach:*
+
+  1. Every time we look to visit a new node, we pick the node with the smallest known distance to visit first.
+    - A data structure to keep track of the smallest distance found from A to all the nodes in the graph is required. This structure must be initialized at the very beginning of the algorithm execution; smallest known distance at the beginning between A and each node can be set to `Infinity`. The structure after initialization looks like the following:
+
+  Vertex | Shortest Distance from A
+  A | 0
+  B | `Infinity`
+  C | `Infinity`
+  D | `Infinity`
+  E | `Infinity`
+  F | `Infinity`
+    - This structure is going to be updated after each iteration of the algorithm.
+
+  2. Once we've moved to the node we're going to visit, we look at each of its neighbors.
+    - We need to keep track of nodes visited from previous iterations, in order to skip them if we've already visited. For this, another data structure can be used (an array,list):
+
+  ```javascript
+    // ...
+    let visited = [];
+    // ...
+  ```
+
+  3. For each neighboring node, we calculate the distance by summing the total edges that lead to the node we're checking *from the starting node*, A in this case.
+    - Edges prior to the current neighbor being checked can be tracked creating a data structure storing references to all nodes and the IMMEDIATELY previous AND SHORTEST path we took from A until the node. The structure after initializtion looks like the following:
+
+  ```javascript
+    let previous = {
+      A: null,
+      B: null,
+      C: null,
+      D: null,
+      E: null,
+      F: null,
+    }
+  ```
+    - The idea with this DS is to have a step-by-step (vertex by vertex) reference of the shortest path (known up to the current iteration) to take from a given node until A.
+
+  4. If the new total distance to a vertex is less than the previous smallest distance stored in the DS initialized in step 1, we update the value stored with the new shorter distance for that vertex. Finally we then repeat from step 1 until all nodes are visited.
+
+#### Priority Queue Implementations
+
+In order to keep track of the smallest path from each vertex to a specific one in a graph, it helps to create a DS that will prioritize the paths in our graph as we loop through its vertex using the algorithm.
+
+  - IMPORTANT NOTE: In cases when we really cared about performance or the graph is big enough, say of millions of vertices, a naive implementation of this DS would make our algorithm to perform deficiently, so we have to consider the usage of custom data structures like the **Min binary Heap** (which is in fact what is used to implement a priority queue in real world cases) discussed in previous sections.
+
+*Naive/simple Priority Queue implementation*
+
+  ```javascript
+    class PriorityQueue {
+      constructor() {
+        this.values = [];
+      }
+      enqueue(value, priority) {
+        this.values.push({ value, priority })
+        this.sort()
+        return this;
+      }
+      dequeue() {
+        return this.values.shift();
+      }
+      sort() {
+        this.values.sort(function sortingCriteria(a,b) {
+          return a.priority - b.priority;
+        })
+      }
+    }
+  ```
+
+#### Dijkstra's Pseudocode
+
+  - This function should accept a starting and ending vertex.
+  - Create an object (we'll call it distances) and set each key to be every vertex in the adjacency list with a value of infinity, except for the starting vertex which should have a value of 0.
+  - After setting a value in the distances object, add each vertex with a priority of `Infinity` to the priority queue, except the starting vertex, which should have a priority of 0 because that's where we begin.
+  - Create another object called previous and set each key to be every vertex in the adjacency list with a value of `null`.
+  - Start looping as long as there is anything in the priority queue:
+    - Dequeue a vertex from the priority queue.
+    - If that vertex is the same as the ending vertex, we are done.
+    - Otherwise loop through each value in the adjacency list at that vertex:
+      - Calculate the distance to that vertex from the starting vertex.
+      - If the distance is less than what is currently stored in our distances object:
+        - Update the distances object with new lower distance.
+        - Update the previous object to contain that vertex.
+        - Enqueue the vertex with the total distance from the start node.
+
+  ```javascript
+    // ... Inside the WeightedGraph class:
+    shortestPath(start, finish) {
+      const nodes = new PriorityQueue();
+      const distances = {};
+      const previous = {};
+      const visited = [];
+      let shortestPath = [];
+      let smallest;
+      for(let vtx in this.adjacencyList) {
+        if (vtx !== start) {
+          distances[vtx] = Infinity;
+          nodes.enqueue(vtx, Infinity);
+        } else {
+          distances[start] = 0;
+          nodes.enqueue(start, 0);
+        }
+        previous[vtx] = null;
+      }
+      while(true) { //Be careful of never reaching the stopping condition (start === finish) when using while(true)
+        smallest = nodes.dequeue().value;
+        if(smallest === finish) {
+          // Build the shortestPath list
+          do {
+            shortestPath.push(smallest)
+            smallest = previous[smallest]
+          } while (smallest);
+          /* recursive approach
+          (function buildPath(path) {
+            shortestPath.push(path)
+            if(path === start) return;
+            buildPath(previous[path])
+          })(finish)
+          */
+          break;
+        }
+        if(visited.includes(smallest)) continue;
+        visited.push(smallest);
+        for(let {node,weight} of this.adjacencyList[smallest]) {
+          let totalDistance = weight;
+          if(previous[smallest]) totalDistance += distances[smallest];
+          if(totalDistance < distances[node]) {
+            distances[node] = totalDistance;
+            previous[node] = smallest;
+            nodes.enqueue(node, totalDistance);
+          }
+        }
+      }
+      return {distances, previous, shortestPath: shortestPath.reverse()};
+    }
+    // ...
+  ```
+
+## 29. Dynamic Programming
+
+#### Intro to Dynamic Programming
 
 
