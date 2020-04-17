@@ -3236,4 +3236,139 @@ In order to keep track of the smallest path from each vertex to a specific one i
 
 #### Intro to Dynamic Programming
 
+> Dynamic Programming is a method for solving a comple problem by breaking it down into a collection of simpler subproblems, solving each of those subproblems just once, and storing their solutions.
 
+> It is an approach for solving some problems. All problems cannot be solved with it. The ones that can be solved with dynamic programming, can see a notorious difference in performance with respect to the same solution taking a different approach.
+
+How we know when we can take the dynamic programming approach when solving a problem? We need to lookup for the presence of an *"optimal substructure"* and the chance of breaking the problem into *"overlapping subproblems"*
+
+#### Overlapping Subproblems
+
+There have to be subproblems that overlap in some way. A problem is said to have *overlapping subproblems* if it can be broken down into subproblems/pieces which are reused several times.
+
+- The pieces into which we should be able to break the problem are solved individually and stored/re-used again, meaning that they are not unique, they are re-used several times.
+- An example problem we can take to picture the concept of overlapping subproblems is the implementation of Fibonacci Sequence: 
+
+  > Every number after the first two is the sum of the two preceding ones.
+
+    - 1 1 2 3 5 8 13 21...
+
+```
+                  fib(5)
+                /      \
+               /        \
+              /          \
+          fib(4)   +     fib(3)
+          /    \           /   \ 
+         /      \         /     \
+        /        \       /       \
+    fib(3)  +  fib(2)  fib(2) + fib(1)
+     /   \
+    /     \
+fib(2) + fib(1)
+```
+
+    - We can notice in the tree representation of a recursive solution to the Fibonacci Sequence that some function invocations get repeated on the right-hand side portion of the tree (assuming the tree is being traversed from left to right). When we say overlapping subproblems we need to look for repetition, things that were calculated previously. `fib(3)` is getting calculated twice whereas `fib(2)` is calculated three times in the example above.
+    - An example of something that involves subproblems but doesn't overlap is the implementation of Merge Sort (breaking down an array into smaller pieces in order to sort and merge them in an efficient way):
+
+```
+                        [10,24,73,76]
+                   mergeSort([10,24,73,76])
+                  /                        \
+                 /                          \
+                /                            \
+            [10,24]        merge           [73,74]       
+        mergeSort([10,24])            mergeSort([73,74])
+          /            \               /              \ 
+         /              \             /                \
+        /                \           /                  \
+     [10]     merge     [24]       [76]      merge     [73]
+mergeSort([10])   mergeSort([24]) mergeSort([76]) mergeSort([73])
+```
+    - With mergeSort() we are breaking the array into subarrays with every call to the function, however we can notice that we are not dealing with overlapping of subproblems (duplication) here; each subarray is different. This structure often leads itself to the divide and conquer method/pattern. In cases where we have a structure with tons of duplication (a simple example could be mergeSort([10,24,10,24])), we definitely should consider to apply dynamic programming approaches.
+
+#### Optimal Substructure
+
+The second characteristic a problem should have in order to qualify for dynamic programming solving approaches is an optimal substructure.
+
+  - A problem is said to have optimal substructure if the optimal solution of a bigger problem can be constructed from the optimal solutions of its subproblems. An example is when finding the shortest path between two given points; whatever the path between the specified points is, any other path along the way is going to be the shortest path from the start to that point.
+
+#### Writing a Recursive Solution
+
+The Fibonacci Sequence exhibits both characteristic needed to be implemented by means of dynamic programming approaches.
+
+  ```javascript
+    // deficient implementation of Fibunacci's numbers
+    function fib(n) {
+      if(n<=2) return 1; // Base case!
+      return fib(n-1) + fib(n-2);
+    }
+  ```
+
+  - This implementation can be better understood following the structure representation previously shown for fib(5). `fib(n-1)` is going to be invoked first within every recursive call to fib(), which represents the left hand-side of each sub-branch on the tree representation down up until hitting the base case of `fib(n>=2)` 
+
+#### Time Complexity of Fib() Recursive Solution
+
+The Big O representation for the previous solution will show us that it is not efficient at all. With every additional recursive calls on `fib(n)`, that is, every increase in n, represents a lot a additional and repeated computations. The Big O notation for this function implementations is O(2<sup>N</sup>). This notation is almost the worst one when talking about Big O (the worst is O(n!) or factorial).
+
+__*The Problem with the Solution*__
+
+The real problem with the previous recursive solution is that it is repeating a lot of calculations being performed in the first branch (most left-hand side branch) already. Refer to the tree-like structure for `fib(5)`
+
+  - What if we could remember repeated calculations? With Dynamic Programming the goal is to "use past knowledge to make solving a future problem easier (refer to the initial definition to Dynamic Programming)"
+
+#### Memoization
+
+The idea when implementing a memoized solution is to have some structure to store data in (an array or object usually) and then store the result of any expensive and/or repetitive computation, making it available when it is required on a next time. The point is that we are storing what we've done in order to save work.
+
+  ```javascript
+    // My own recursion + memoization implementation
+    function memoFib(number) {
+      const cachedValues = {0:undefined, 1:1, 2:1};
+      function recursiveFib(n) {
+        if(cachedValues[n]) return cachedValues[n];
+        cachedValues[n] = recursiveFib(n-1) + recursiveFib(n-2);
+        return cachedValues[n];
+      }
+      return recursiveFib(number)
+    }
+
+    /* Lecture's implementation 
+    function memoFib(n, memo = [undefined,1,1]) {
+      if(memo[n]) return memo[n];
+      memo[n] = memoFib(n-1,memo) + memoFib(n-2,memo);
+      return memo[n];
+    }
+    */
+  ```
+
+One drawback of this memoized + recursive implementations is that for a higher sequence's result request, the JS engine's will throw us a 'call stack overflow' error.
+
+  - Additionally, the JS engine will lose precision when dealing with very large numbers (this is a drawback related to the JS engine itself and not to our implementation).
+
+*Time Complexity of the Memoized Solution*
+
+- With the memoized solution, the algorithm is going to perform the calculation of any required `fib(n--)` invocation just once. After that, any subsequent invocation of the same `fib(n)` is going to be just a lookup to the data structure set as `memo` in our implementation. In the case of an array (and an object), looking up for the value stored at a given index is constant time (O(1)). So we can narrow the Big O representation of the memoized solution to be linear, that is, O(n).
+
+#### Tabulation: A Bottom Up Approach
+
+So far we have been working following a Top-Down approach; we have been starting with what we've trying to find and working down to fill in the gaps and then adding up all together.
+
+Following a Bottom-Up approach means that we are going to begin with `fib(1(1)` and `fib(2)`, add them together, continuing to `fib(3)` to repeat the process on and on until reaching the specified sequence length. The result at the end of the day is the same in both approaches, with the only difference being the direction taken in each.
+
+  - The strategy in a Bottom-Up approach is called tabulation. Storing the result of a previous result in a 'table' (usually an array). It is commonly perform using iteration with a loop (not exclusively, but commonly). With this approach we can obtain better space complexity (think of the stack overflow issue with the memoized top-down approach from before).
+
+  ```javascript
+    // Tabulation / Bottom Up (iterative) approach
+    function iterativeFib(n) {
+      let memo = [0,1,1];
+      if(memo[n]) return memo[n];
+      for(let i=3; i<=n; i++) {
+        memo[i] = memo[i-1] + memo[i-2];
+      }
+      return memo[n];
+    }
+
+    // 0 1 1 2 3 5 8 13 21 34 55 89 144 233... (values)
+    // 0 1 2 3 4 5 6 7  8  9  10 11 12  13... (indices)
+  ```
