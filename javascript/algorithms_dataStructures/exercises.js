@@ -351,10 +351,10 @@ function recursiveRange(num, acc = 0) {
   if(num <= 0) return acc;
   return recursiveRange(num-1, acc+num)
 }
-
+// Course's Solution
 function recursiveRangeSol(x){
   if (x === 0 ) return 0;
-  return x + recursiveRange(x-1);
+  return x + recursiveRangeSol(x-1);
 }
 
 function memoFib(num, memo = [undefined,1,1]) {
@@ -369,5 +369,181 @@ function fibSol(num) {
   return fibSol(num-1) + fibSol(num-2);
 }
 
-console.log(memoFib(40))
-// console.log(fibSol(40))
+/* CHALLENGING RECURSIVE PROBLEMS */
+
+function reverse(str) {
+  if(!str) return str;
+  return str[str.length-1] + reverse(str.slice(0,str.length-1)) 
+}
+// Course's Solution
+function reverseSol(str){
+	if(str.length <= 1) return str;
+	return reverseSol(str.slice(1)) + str[0];
+}
+
+function isPalindrome(str) {
+  if(str.length <= 1) return true;
+  if(str[0] !== str[str.length-1]) return false;
+  return isPalindrome(str.slice(1,str.length-1))
+}
+// Course's Solution
+function isPalindromeSol(str){
+  if(str.length === 1) return true;
+  if(str.length === 2) return str[0] === str[1];
+  if(str[0] === str.slice(-1)) return isPalindromeSol(str.slice(1,-1))
+  return false;
+}
+
+function someRecursive(array, callback) {
+  // TODO
+}
+// Course's Solution
+function someRecursive(array, callback) {
+  if (array.length === 0) return false;
+  if (callback(array[0])) return true;
+  return someRecursive(array.slice(1),callback);
+}
+
+function flatten(oldArr) {
+  let newArr = [];
+  for(let item of oldArr) {
+    if(Array.isArray(item)) {
+      newArr = newArr.concat(flatten(item));
+    } else {
+      newArr = newArr.concat(item)
+    }
+  }
+  return newArr;
+}
+// Course's Solution
+function flattenSol(oldArr){
+  var newArr = []
+  	for(var i = 0; i < oldArr.length; i++){
+    	if(Array.isArray(oldArr[i])){
+      		newArr = newArr.concat(flattenSol(oldArr[i]))
+    	} else {
+      		newArr.push(oldArr[i])
+    	}
+  } 
+  return newArr;
+}
+
+function capitalizeWords(array) {
+  if(array.length === 1) return array[0].toUpperCase();
+  let newArr = []
+  return newArr.concat(array[0].toUpperCase(), capitalizeWords(array.slice(1)))
+}
+// Course's Solution
+function capitalizeWordsSol(array) {
+  if (array.length === 1) {
+    return [array[0].toUpperCase()];
+  }
+  let res = capitalizeWordsSol(array.slice(0, -1));
+  res.push(array.slice(array.length-1)[0].toUpperCase());
+  return res;
+
+}
+
+function nestedEvenSum(obj, sum = 0) {
+  for (let key in obj) {
+    if(typeof(obj[key]) === 'object') {
+      sum += nestedEvenSum(obj[key]);
+    } else if (typeof(obj[key]) === 'number' && obj[key] % 2 === 0) {
+      sum += obj[key];
+    }
+  }
+  return sum;
+}
+// Course's Solution
+function nestedEvenSumSol(obj, sum=0) {
+  for (var key in obj) {
+      if (typeof obj[key] === 'object'){
+          sum += nestedEvenSumSol(obj[key]);
+      } else if (typeof obj[key] === 'number' && obj[key] % 2 === 0){
+          sum += obj[key];
+      }
+  }
+  return sum;
+}
+
+function capitalizeFirst(array) {
+  if(array.length === 1) return array[0][0].toUpperCase() + array[0].slice(1);
+  let newArr = [];
+  return newArr.concat(array[0][0].toUpperCase() + array[0].slice(1), capitalizeFirst(array.slice(1)))
+
+}
+// Course's solution
+function capitalizeFirstSol(array) {
+  if (array.length === 1) {
+    return [array[0][0].toUpperCase() + array[0].substr(1)];
+  }
+  const res = capitalizeFirstSol(array.slice(0, -1));
+  const string = array.slice(array.length - 1)[0][0].toUpperCase() + array.slice(array.length-1)[0].substr(1);
+  res.push(string);
+  return res;
+}
+
+
+// TODO EXERCISES!!!
+
+function stringifyNumbers(obj) {
+  // TODO
+}
+// Course's solution
+function stringifyNumbersSol(obj) {
+  var newObj = {};
+  for (var key in obj) {
+    if (typeof obj[key] === 'number') {
+      newObj[key] = obj[key].toString();
+    } else if (typeof obj[key] === 'object' && !Array.isArray(obj[key])) {
+      newObj[key] = stringifyNumbersSol(obj[key]);
+    } else {
+      newObj[key] = obj[key];
+    }
+  }
+  return newObj;
+}
+console.log(stringifyNumbersSol({a:{d:65},b:2,c:3})) // { a: { d: '65' }, b: '2', c: '3' }
+
+function collectStringsHelper(obj) {
+  // TODO
+}
+// Course's solution: Helper method recursion
+function collectStringsHelperSol(obj) {
+  var stringsArr = [];
+
+  function gatherStrings(o) {
+      for(var key in o) {
+          if(typeof o[key] === 'string') {
+              stringsArr.push(o[key]);
+          }
+          else if(typeof o[key] === 'object') {
+              return gatherStrings(o[key]);
+          }
+      }
+  }
+
+  gatherStrings(obj);
+
+  return stringsArr;
+}
+console.log(collectStringsHelperSol({a:'a',b:'b',c:'c'})) // [ 'a', 'b', 'c' ]
+
+function collectStringPure(obj) {
+  // TODO
+}
+// Course's solution: pure recursion method
+function collectStringsPureSol(obj) {
+  var stringsArr = [];
+  for(var key in obj) {
+      if(typeof obj[key] === 'string') {
+          stringsArr.push(obj[key]);
+      }
+      else if(typeof obj[key] === 'object') {
+          stringsArr = stringsArr.concat(collectStrings(obj[key]));
+      }
+  }
+
+  return stringsArr;
+}
+console.log(collectStringsPureSol({a:'a',b:'b',c:'c'})) // [ 'a', 'b', 'c' ]
