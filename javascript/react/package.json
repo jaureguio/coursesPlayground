@@ -1,0 +1,15 @@
+{
+  "name": "react",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "run-server": "npx browser-sync start --server --files \"./*.html\" --no-open --no-notify --directory",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "browser-sync": "^2.26.7"
+  }
+}
