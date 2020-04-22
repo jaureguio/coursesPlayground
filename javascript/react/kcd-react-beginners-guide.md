@@ -59,4 +59,79 @@ The way React's is commonly implemented in the community is by using `JSX` which
 
 ## Render Elements side-by-side with React Fragments
 
-In order to pass multiple sibling elements into a `React.createElement()`
+In order to pass multiple sibling elements into a `React.createElement()` call, React provides a wrapping element type called 'Fragment'. This is really useful when grouping blocks of HTML markup for tables, for example, without adding additional markup. We can implement them by passing the elements to group into a `React.Fragment` element type (as first element to a `React.createElement()` call).
+
+  - The usage of Fragments save us the trouble of creating a container element (like a div), to group sibling elements we intend to render on the page.
+  - Because it's widely usage during development, JSX introduce a shorter syntax for them (the original JSX is `<React.Fragment></React.Fragment>`):
+
+  ```jsx
+    <> // The shorter syntax doesn't require to have the React.fragment inside of the angle brackets
+      <span>Hello</span>
+      <span>World</span>
+    </>
+  ```
+
+## Create a Reusable React Component
+
+In order to avoid repetition, we can create functions that return JSX elements. These functions become React components, and as suck, they receive in props. Props can be manipulated though the first parameter to the React component.
+
+  - It is a common practice to define React components with capitalized (as if they were classes) labels and using arrow functions (lambdas). Using capitalized labels for React components instruct JSX that we want to create React element using a reference to the React component created, instead of a DOM element named as lowecased element (for example, 'message' would be treated as a reference to a `<message></message>` HTML element; 'Message', on the other hand, as a reference to a declared function).
+
+  ```jsx
+    const Message = props => <div className="message">{props.children}</div>
+  ```
+
+  - It is important to remember that both 'children' and 'className' are prop names reserved by React. Whatever is enclosed by JSX element tags is considered as the props.children of it.
+
+## Validate Custom React Components Props with PropTypes
+
+Our custom functional components may not be used correctly after creating them, either by us or another person. Because of this, React added support to functional components' type checking at runtime to validate the props passed to our custom components.
+
+  - We have to add a 'propTypes' property to the functional component, which has to be an object with methods named as the props of the component. The process is shown as follows:
+
+  ```jsx
+    const SayHello = ({firstName, lastName}) => (
+      <div>Hello {firstName} {lastName}!</div>
+    )
+
+    SayHello.propTypes = {
+      firstname(props, propName, componentName) {
+        /* 
+          Logic to validate props being passed to the component:
+            - 'props' is an object containing all the props passed to the component.
+            - 'propName' holds the name for each specific prop been validated.
+            - 'componentName'... 
+          All type checker functions have to return undefined/null or an Error.
+        */
+      },
+      lastname(props, propName, componentName) { /* ... */ }
+    }
+    /* 
+      An abstraction to the previously defined:
+      const propTypes = {
+        string(props, propName, componentName) {
+          if(typeof(props[propName]) !== 'string') {
+            const error = `The "${propName}" prop has to be a string in the ${componentName} component, but you passed a ${typeof props[propName]} value`
+            return new Error(error)
+          }
+        }
+      }
+      SayHello.propTypes = {
+        firstName: propTypes.string,
+        lastName: propTypes.string
+        }
+    */
+  ```
+
+  - prop type checking is so common during development that the React team developed a package called 'prop-types' to ease the validation process setup. We can grab the CDN link from *unpkg.com* and add a `<script>` tag to include it as before. This way we are going to have the `PropType` object defined as a global variable, basically containing a lot of type checker functions similar to the `string` method defined in the `propTypes` object abstraction from above.
+
+> When specifying `propTypes`, a fair amount of code needs to be run whenever React mounts our components, which *may* impact application performance. We can skip the running of the `propTypes` related code using the production build of React or a babel plugin called 'babel-plugin-transform-react-remove-prop-types' (this plugin is going to remove 'unnecessary' React `propTypes` from the production build). Many toolkits/bundlers have this plugin included (or use a similar approach) by default.
+
+## Understanding and Using Interpolation in JSX
+
+We can have nested/interchangeably combinations of JSX/JS syntax evaluation in the code compiled by Babel.
+
+  - Each time we hit an JSX element's opening tag (`<element>`) we tell Babel that the following code should be compiled as JSX syntax. This JSX considerations are going to persist until the corresponding element's closing tag is parsed (in which case Babel will return to JS land) OR and opening curly brace is parsed (`{`). If the latter happens, Babel will evaluate/compile code as a limited version of JS (only expressions are allowed here, i.e. only primitive values, ternary operators, IIFE, and so on). This parsing considerations can be repeated several times.
+
+## Rerender a React Application
+
