@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>
+      Using React Fragments
+    </title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script src="https://unpkg.com/@babel/standalone@7.8.3/babel.js"></script>
+    <script src="https://unpkg.com/react@16.12.0/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@16.12.0/umd/react-dom.development.js"></script>
+    <script type="text/babel">
+      const rootElement = document.getElementById("root")
+
+      /* Using React APIs:
+
+      const helloElement = React.createElement('span',{id: "children1"},"Hello")
+      const worldElement = React.createElement('span',{id: "children2"},"World")
+      const wrapperElement = React.createElement(React.Fragment,{id:"container"}, helloElement, worldElement,"Additional Child!")
+      */
+
+      // Using JSX Syntax
+      const wrapperElement = (
+        // We could have used longer syntax <React.Fragment> as well
+        <>
+          <span id="children1">Hello</span>
+          <span id="children2">World</span>
+          "Additional Child!"
+        </>
+      )
+      
+      ReactDOM.render(wrapperElement, rootElement)
+    </script>
+  </body>
+</html>
