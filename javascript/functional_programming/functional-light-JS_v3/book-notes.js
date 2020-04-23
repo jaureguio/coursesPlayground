@@ -137,3 +137,116 @@ var lookupPerson = compose(processPerson, personData);
 Point-Free refactoring completed!
 */
 getLastOrder(lookupPerson);
+
+/* 08. RECURSION */
+
+function isPrime(num, divisor = 2) {
+  // Base condition: 0 and 1 are not primes by convention. 2 is the only even prime number, that's why it is excluded from the condition checking
+  if(num < 2 || (num > 2 && num % divisor == 0)) {
+    return false;
+  }
+  // We are saving work here. The idea is to mod-check num with every possible divisor, in a efficent way (is not necessary to check for divisor greater than the root of the number checked)
+  if(divisor <= Math.sqrt(num)) {
+    return isPrime(num, divisor+1)
+  }
+  return true;
+}
+
+/* Mutual recursion */
+
+function isOdd(v) {
+  if(v === 0) return false;
+  return isEven(Math.abs(v)-1);
+}
+function isEven(v) {
+  if(v === 0) return true;
+  return isOdd(Math.abs(v)-1);
+}
+
+// Mutually recursive fib sequence: WHAT?????????????????????
+function fib_(n) {
+  if(n == 1) return 1;
+  else return fib(n-2);
+}
+function fib(n) {
+  if(n == 0) return 0;
+  else return fib(n-1) + fib_(n)
+}
+
+/* ... */
+// Imperative approach (looping)
+function sumIterative(total = 0,...nums) {
+  // let total = 0;
+
+  for(let num of nums) {
+    total += num;
+  }
+  return total
+}
+// Declarative/Recursive approach
+function sumRecursive(num1,...nums) {
+  if(!nums.length) return num1;
+  return num1 + sumRecursive(...nums)
+}
+
+function maxEvenIterative(...nums) {
+  let maxEven = -Infinity;
+  for(let num of nums) {
+    if(num%2==0 && num > maxEven) maxEven = num;
+  }
+  return maxEven == -infinity ? undefined : maxEven;
+}
+function maxEvenRecursive(num, ...nums) {
+  const maxRest = nums.length ? maxEven(...nums) : null
+  if(num % 2 == 0 && num > maxRest) return num;
+  else return maxRest;
+}
+
+// PTC (Proper Tail Calls): implies that previous stack frame can be complety disgarded after dispatching the next recursive call, freeing up the call stack memory and avoiding call stack errors
+
+// #########
+// PROPER TAIL CALLS ONLY WORKS WITH "use strict" MODE!
+// #########
+
+"use strict"
+function sumPTC(total,num1, ...nums) {
+  total += num1;
+  if(!nums.length) return total;
+  return sumPTC(total, ...nums);
+}
+
+/* 
+function sumPTC(num1,num2,...nums) {
+  num1 += num2;
+  if(!nums.length) return num1;
+  return sumPTC(num1, ...nums);
+} 
+ */
+
+//  TRAMPOLINES
+
+function trampoline(fn) {
+  return function trampolined(...args) {
+    var result = fn(...args);
+    while(typeof result == 'function') {
+      result = result();
+    }
+    return result
+  }
+}
+
+function sumWrapped(num1, num2, ...nums) {
+  num1 += num2
+  if(!nums.length) return num1;
+  return function wrapper() { // THE TRICK HAPPENS HERE! WE RETURN A FUNCTION DEF WRAPPING THE RECURSIVE CALL TO THE OUTER FUNCTION
+    return sumWrapped(num1, ...nums)
+  }
+}
+arr = []
+for(let i = 0; i<20000; i++) {
+  arr.push(i)
+}
+
+sum = trampoline(sumWrapped)
+console.log(sum(...arr)) // 199990000
+console.log(sumPTC(...arr)) // Thrown: RangeError: Maximun call stack size exceeded
