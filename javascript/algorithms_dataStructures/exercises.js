@@ -487,7 +487,17 @@ function capitalizeFirstSol(array) {
 // TODO EXERCISES!!!
 
 function stringifyNumbers(obj) {
-  // TODO
+  let newObj = {}
+  for(let key in obj) {
+    if(typeof obj[key] === 'object') {
+      newObj[key] = stringifyNumbers(obj[key])
+    } else if(typeof obj[key] === 'number') {
+      newObj[key] = String(obj[key])
+    } else {
+      newObj[key] = obj[key]
+    }
+  }
+  return newObj;
 }
 // Course's solution
 function stringifyNumbersSol(obj) {
@@ -503,10 +513,19 @@ function stringifyNumbersSol(obj) {
   }
   return newObj;
 }
-console.log(stringifyNumbersSol({a:{d:65},b:2,c:3})) // { a: { d: '65' }, b: '2', c: '3' }
 
 function collectStringsHelper(obj) {
-  // TODO
+  function gatherStrings(obj, acc = []) {
+    for(let key in obj) {
+      if(typeof obj[key] === 'string') {
+        acc = [...acc, obj[key]]
+      } else if(typeof obj[key] === 'object') {
+        acc = gatherStrings(obj[key], acc)
+      }
+    }
+    return acc;
+  }
+  return gatherStrings(obj)
 }
 // Course's solution: Helper method recursion
 function collectStringsHelperSol(obj) {
@@ -527,10 +546,16 @@ function collectStringsHelperSol(obj) {
 
   return stringsArr;
 }
-console.log(collectStringsHelperSol({a:'a',b:'b',c:'c'})) // [ 'a', 'b', 'c' ]
 
-function collectStringPure(obj) {
-  // TODO
+function collectStringsPure(obj, acc = []) {
+  for(let key in obj) {
+    if(typeof obj[key] === 'string') {
+      acc = [...acc, obj[key]]
+    } else if(typeof obj[key] === 'object') {
+      acc = collectStringsPure(obj[key], acc)
+    }
+  }
+  return acc;
 }
 // Course's solution: pure recursion method
 function collectStringsPureSol(obj) {
@@ -546,4 +571,3 @@ function collectStringsPureSol(obj) {
 
   return stringsArr;
 }
-console.log(collectStringsPureSol({a:'a',b:'b',c:'c'})) // [ 'a', 'b', 'c' ]
