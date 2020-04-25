@@ -1,0 +1,45 @@
+
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>
+      Re-render a Component
+    </title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script src="https://unpkg.com/@babel/standalone@7.8.3/babel.js"></script>
+    <script src="https://unpkg.com/react@16.12.0/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@16.12.0/umd/react-dom.development.js"></script>
+    <!-- The next script incorporates an object called PropTypes as a global variable.It contains multiple type-checker functions we can use to validate our components' props -->
+    <script src="https://unpkg.com/prop-types@15.7.2/prop-types.min.js"></script>
+    <script type="text/babel">
+      const rootElement = document.getElementById("root")
+
+      function tick() {
+        const time = new Date().toLocaleTimeString()
+        const element = (
+          <div>
+            <input value={time} />
+            <input value={time} />
+          </div>
+        )
+        ReactDOM.render(element, rootElement)
+
+        /* Using JS DOM APIs (and having the app completely updated with every function component update)
+        const element = (
+          `<div>
+            <input value=${time} />
+            <input value=${time} />
+          </div>`
+        )
+        rootElement.innerHTML = element 
+         */
+      }
+
+      tick()
+      setInterval(tick,1000)
+    </script>
+  </body>
+</html>

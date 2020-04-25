@@ -135,3 +135,10 @@ We can have nested/interchangeably combinations of JSX/JS syntax evaluation in t
 
 ## Rerender a React Application
 
+React provides some optimization to our application, enhancing performance. Only the components whose properties change are going to be re-rendered. This aids the performance and the accessibility on our apps; focus can be tracked because the whole app is not re-render between component updates, only the ones who needs to be updated.
+
+## Style React Components with className and inline Styles
+
+To apply styles to our React components, we can set class and id attributes to the JSX syntax that will be compiled into properties to the props object passed to `React.createElement()`. Additionally, inline styles can be applied with the reserved key prop `styles` in React.
+
+  - It is important to remember that because JSX is compiled to JS and not HTML, we have to use `className` instead of `class` when defining a class for the element (this is due to conflicts with the `class` keyword in JS. This happens with other keywords as well).

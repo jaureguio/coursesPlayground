@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>
+      Styling React Components with className and inline Styles
+    </title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script src="https://unpkg.com/@babel/standalone@7.8.3/babel.js"></script>
+    <script src="https://unpkg.com/react@16.12.0/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@16.12.0/umd/react-dom.development.js"></script>
+    <!-- The next script incorporates an object called PropTypes as a global variable.It contains multiple type-checker functions we can use to validate our components' props -->
+    <script src="https://unpkg.com/prop-types@15.7.2/prop-types.min.js"></script>
+    <style>
+      #container { 
+        display: flex;
+        align-items: center;
+        height: 100vh;
+      }
+      .box {
+        border: 1px solid #333;
+        display: flex;
+        flex-direction: column;
+        justify-content: end;
+        text-align: center;
+        height: 100vh
+      }
+      .box--large {
+        width: 270px;
+        height: 270px;
+      }
+      .box--medium {
+        width: 180px;
+        height: 180px;
+      }
+      .box--small {
+        width: 90px;
+        height: 90px;
+      }
+    </style>
+    <script type="text/babel">
+    
+      function Box({size, style, ...rest}) {
+        const sizeClassName = size ? `box--${size}` : ''
+        return (
+          <div
+            className={`box ${sizeClassName}`}
+            style={{backgroundColor: 'yellow', ...style}}
+            {...rest}
+          />
+        )
+      }
+      
+      const element = (
+        <div id="container">
+          <Box 
+            size="small"
+            style={{backgroundColor: 'purple'}}
+          >
+            Small lightblue box
+          </Box>
+          <Box 
+            size="medium"
+            style={{backgroundColor: "orange"}}
+          >
+            medium orange box
+          </Box>
+          <Box 
+            size="large" 
+            style={{backgroundColor: "brown"}}
+          >
+            Large brown box
+          </Box>
+        </div>
+      )
+
+      ReactDOM.render(element, document.getElementById("root"))
+    </script>
+  </body>
+</html>
