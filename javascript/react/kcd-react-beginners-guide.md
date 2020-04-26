@@ -142,3 +142,10 @@ React provides some optimization to our application, enhancing performance. Only
 To apply styles to our React components, we can set class and id attributes to the JSX syntax that will be compiled into properties to the props object passed to `React.createElement()`. Additionally, inline styles can be applied with the reserved key prop `styles` in React.
 
   - It is important to remember that because JSX is compiled to JS and not HTML, we have to use `className` instead of `class` when defining a class for the element (this is due to conflicts with the `class` keyword in JS. This happens with other keywords as well).
+
+## Use Event Handlers with React
+
+React makes some serious optimization on the DOM native events. Our event handlers receive what is called a `SyntheticEvent` object. The native event, although not commonly accessed, it is contained inside the syntethic event.
+
+## Manage State in a React Component with the useState Hook
+
