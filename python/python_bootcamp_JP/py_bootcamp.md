@@ -709,3 +709,147 @@ This module allows us to set debugger checkpoints in our code to inspect/track t
   ```
 
   - We can use 'q' to quit the debugger.
+
+## 15. Advanced OOP
+
+### Inheritance Revisted
+
+Recall that with inheritance, one or more derived classes can inherit attributes and methods from a base class. This reduces duplication, and means that any changes made to the base class will automatically translate to derived classes.
+
+  - A derived class does not have to include their own `__init__` (constructor) method because the base class `__init__` gets called automatically. However, if we do define an `__init__` method in the derived class, it will override the base one inherited.
+  - When a derived class defines it own `__init__` method, inside of it we can (and should) call the constructor from each inherited classes (in the case of multiple inheritance)
+
+  ```python
+    class Car:
+      def __init__(self, wheels = 4):
+        self.wheels = wheels
+    
+    class Gasoline(Car):
+      def __init__(self, engine = 'Gasoline', tank_cap = 20):
+        Car.__init__(self)
+        self.engine = engine
+        self.tank_cap = tank_cap
+        self.tank = 0
+      
+      def refuel(self):
+        self.tank = self.tank_cap
+
+    class Electric(Car):
+      def __init__(self, engine = 'Electric', kWh_cap = 60):
+        Car.__init__(self)
+        self.engine = engine
+        self.kWh_cap = kwh_cap
+        self.kWh = 0
+
+      def recharge(self):
+        self.kWh = self.kwh_cap
+
+    class Hybrid(Gasoline, Electric):
+      def __init__(self, engine = 'Hybrid', tank_cap = 11, kWh_cap = 5):
+        Gasoline.__init__(self,engine,tank_cap)
+        Electric.__init__(self,engine,kWh_cap)
+
+      prius = Hybrid()
+      print(prius.tank) # 0
+      print(prius.kWh)  # 0
+
+      prius.recharge()
+      print(prius.kWh)  # 5
+  ```
+
+### Why do we use `self`?
+
+Python uses `self` to find the right set of attributes and methods to apply to an object.
+
+  - When we type: `prius.recharge()`, what really happens is that Python first looks up the class belonging to `prius` (Hybrid in this case), and then passes `prius` to the `Hybrid.recharge()` method. It is the same as running: `Hybrid.recharge(prius)`.
+
+### Method Resolution Order (MRO)
+
+To resolve multiple inheritance conflicts when inherited classes shares same methods, Python employs MRO, which is a formal plan that is follow when running object methods.Take the following example:
+
+  ```python
+    class A:
+      num = 4
+
+    class B(A):
+      pass
+    
+    class C(A):
+      num = 5
+
+    class D(B,C):
+      pass
+  ```
+        A
+      num=4
+     /     \
+    /       \
+   B         C
+  pass     num=5
+   \         /
+    \       /
+        D
+       pass
+
+  - Here `num` is a class attribute belonging to all four classes. When called, `D.num` holds the value of 5. **Python obeys the first method in the chain that *defines* `num`**. The order followed is [D,B,C,A,object] where *object* is Python's base object class. In the example above, the first class to define and/or orverride a previously defined `num` property is `C`.
+
+### super()
+
+Python's built-in `super()` function provides a shortcut for calling base classes, because it automatically follows MRO.
+
+  - In its simples form with single inheritance:
+
+  ```python
+    class BaseClass:
+      def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+    class DerivedClass(BaseClass):
+      def __init__(self, x, y, z):
+        super().__init__(x, y) # super() handles the passing of self to base class's __init__
+        self.z = z
+  ```
+
+  - In a more dynamic form, with multiple inheritance like the one shown previously, `super()` can be use to properly manage method definitions:
+
+  ```python
+    class A:
+      def truth(self):
+        return 'All numbers are even!'
+
+    class B(A):
+      pass
+
+    class C(A):
+      def truth(self):
+        return 'Some numbers are even'
+
+    class D(B,C):
+      def truth(self, num):
+        if num % 2 == 0:
+          return A.truth(self)
+        return super().truth()  
+
+    d = D()
+    d.truth(6) # All numbers are even!      
+    d.truth(5) # Some numbers are even!     
+  ```
+
+## 16. Introduction to GUIs
+
+We need to install Jupyter Notebooks in order to have an environment where the widgets can be loaded and manipulated. To to this:
+
+  - Create a virtual environment in the desired project (recommend to isolate all installations to be perfomed from other previously done).
+  
+  ```powershell
+    py -m venv env
+    env\Scripts\activate
+  ```
+
+  - Install Jupyter Notebooks: `pip install notebook`
+
+  - Run a Jupyter Notebook sever: `jupyter notebook [,notebook] [,--no-browser]`
+  
+### interact
+
