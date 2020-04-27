@@ -1,3 +1,4 @@
-/python/pyworkshop/env
+# /python/pyworkshop/env
+env/
 .vscode/settings.json
 node_modules/
