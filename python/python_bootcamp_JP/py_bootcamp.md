@@ -1421,4 +1421,121 @@ Unlike with `interact`, the return value of the function will not be displayed a
 
 ### Widgets Basics
 
+Widgets are eventful Python objects that have a representation in the browser, ften as a controll like a slider, textbox, etc. 
+
+  - You can use widgets to build interactive GUIs for our notebooks. We can also use widgets to ***synchronize stateful and stateless information***  between Python and JavaScript.
+
+#### repr
+
+Widgets have their own display `repr` which allows them to be displayed using IPython's display framework. Constructing and returning an `IntSlider` automatically displays the widget (as seen below). Widgets are displayed inside the output are below the code cell. Clearing cell output will also remove the widget.
+
+#### Multiple display() calls
+
+If we display the same widget twice, the displayed instances in the front-end will remain in sync with each other.
+
+  ```python
+    from IPython.display import display
+    w = widgets.IntSlider()
+    display(w)
+    display(w)
+  ```
+  \* We can close a widget by calling its `close()` method: `w.close()`
+
+#### Widget Properties
+
+All of the `IPython` widgets share a similar naming scheme. To read the value of a widget, we can query its `value` property.
+
+  ```python
+    w = widgets.IntSlider()
+    display(w)
+    w.value
+    # Similarly, to set a widget's value, we can set its value property:
+    w.value = 100
+  ```
+
+#### Keys
+
+In addition to `value`, most widgets share `keys`, `description`, and `disabled`. To see the entire list of synchronized, stateful properties of any specific widget, we can query the `keys` property:
+
+  ```python
+    w.keys
+    """
+    ['_dom_classes',
+    '_model_module',
+    '_model_module_version',
+    '_model_name',
+    '_view_count',
+    '_view_module',
+    '_view_module_version',
+    '_view_name',
+    'continuous_update',
+    'description',
+    'disabled',
+    'layout',
+    'max',
+    'min',
+    'orientation',
+    'readout',
+    'readout_format',
+    'step',
+    'style',
+    'value']
+    """
+  ``` 
+
+#### Shorthand for setting the initial values of widget properties
+
+while creating a widget, we can set some or all of the initial values of that widget by defining them as keyword arguments in the widget's constructor:
+
+  ```python
+    widgets.Text(value='Hello', disabled=True)
+  ```
+
+#### Linking Two Similar Widgets
+
+If we need to display the same value two different ways, we'll have to use two different widgets. instead of attempting to manually synchronize the values of the two widgets, we can use the `link` or `jslink` function to link two properties together.
+
+  ```python
+    a = widgets.FloatText()
+    b = widgets.FloatSlider()
+    display(a,b)
+
+    myLink = widgets.jslink((a, 'value'), (b, 'value'))
+
+    # Unlinking widgets can be achieved using the unlink property on the link object.
+    myLink.unlink()
+  ```
+
+### Widget List
+
+For a complete list of the GUI widgets available to you, you can list the registered widget types. Widget is the base class.
+
+  ```python
+    import ipywidgets as widgets
+
+    # Show all available widgets!
+    for item in widgets.Widget.widget_types.items():
+      print(item[0][2][:-5])
+  ```
+
+#### Example of a Numeric Widget and Available Properties to be Set on it
+
+  ```python
+    widgets.IntSlider(
+      value=7,
+      min=0,
+      max=10,
+      step=1,
+      description='Test:',
+      disabled=False,
+      continuous_update=False,
+      orientation='horizontal',
+      readout=True,
+      readout_format='d'
+    )
+  ```
+
+### Widget Events
+
+#### Special Events
 
