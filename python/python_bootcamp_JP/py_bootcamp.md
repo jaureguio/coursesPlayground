@@ -1184,5 +1184,241 @@ What was done in the second half of the previous code block (opening the file, e
     p.write('Add more text') # ValueError: I/O operation on closed file/
   ```
 
+## 15. Advanced OOP
+
+### Inheritance Revisted
+
+Recall that with inheritance, one or more derived classes can inherit attributes and methods from a base class. This reduces duplication, and means that any changes made to the base class will automatically translate to derived classes.
+
+  - A derived class does not have to include their own `__init__` (constructor) method because the base class `__init__` gets called automatically. However, if we do define an `__init__` method in the derived class, it will override the base one inherited.
+  - When a derived class defines it own `__init__` method, inside of it we can (and should) call the constructor from each inherited classes (in the case of multiple inheritance)
+
+  ```python
+    class Car:
+      def __init__(self, wheels = 4):
+        self.wheels = wheels
+    
+    class Gasoline(Car):
+      def __init__(self, engine = 'Gasoline', tank_cap = 20):
+        Car.__init__(self)
+        self.engine = engine
+        self.tank_cap = tank_cap
+        self.tank = 0
+      
+      def refuel(self):
+        self.tank = self.tank_cap
+
+    class Electric(Car):
+      def __init__(self, engine = 'Electric', kWh_cap = 60):
+        Car.__init__(self)
+        self.engine = engine
+        self.kWh_cap = kwh_cap
+        self.kWh = 0
+
+      def recharge(self):
+        self.kWh = self.kwh_cap
+
+    class Hybrid(Gasoline, Electric):
+      def __init__(self, engine = 'Hybrid', tank_cap = 11, kWh_cap = 5):
+        Gasoline.__init__(self,engine,tank_cap)
+        Electric.__init__(self,engine,kWh_cap)
+
+      prius = Hybrid()
+      print(prius.tank) # 0
+      print(prius.kWh)  # 0
+
+      prius.recharge()
+      print(prius.kWh)  # 5
+  ```
+
+### Why do we use `self`?
+
+Python uses `self` to find the right set of attributes and methods to apply to an object.
+
+  - When we type: `prius.recharge()`, what really happens is that Python first looks up the class belonging to `prius` (Hybrid in this case), and then passes `prius` to the `Hybrid.recharge()` method. It is the same as running: `Hybrid.recharge(prius)`.
+
+### Method Resolution Order (MRO)
+
+To resolve multiple inheritance conflicts when inherited classes shares same methods, Python employs MRO, which is a formal plan that is follow when running object methods.Take the following example:
+
+  ```python
+    class A:
+      num = 4
+
+    class B(A):
+      pass
+    
+    class C(A):
+      num = 5
+
+    class D(B,C):
+      pass
+  ```
+        A
+      num=4
+     /     \
+    /       \
+   B         C
+  pass     num=5
+   \         /
+    \       /
+        D
+       pass
+
+  - Here `num` is a class attribute belonging to all four classes. When called, `D.num` holds the value of 5. **Python obeys the first method in the chain that *defines* `num`**. The order followed is [D,B,C,A,object] where *object* is Python's base object class. In the example above, the first class to define and/or orverride a previously defined `num` property is `C`.
+
+### super()
+
+Python's built-in `super()` function provides a shortcut for calling base classes, because it automatically follows MRO.
+
+  - In its simples form with single inheritance:
+
+  ```python
+    class BaseClass:
+      def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+    class DerivedClass(BaseClass):
+      def __init__(self, x, y, z):
+        super().__init__(x, y) # super() handles the passing of self to base class's __init__
+        self.z = z
+  ```
+
+  - In a more dynamic form, with multiple inheritance like the one shown previously, `super()` can be use to properly manage method definitions:
+
+  ```python
+    class A:
+      def truth(self):
+        return 'All numbers are even!'
+
+    class B(A):
+      pass
+
+    class C(A):
+      def truth(self):
+        return 'Some numbers are even'
+
+    class D(B,C):
+      def truth(self, num):
+        if num % 2 == 0:
+          return A.truth(self)
+        return super().truth()  
+
+    d = D()
+    d.truth(6) # All numbers are even!      
+    d.truth(5) # Some numbers are even!     
+  ```
+
+## 16. Introduction to GUIs
+
+We need to install Jupyter Notebooks in order to have an environment where the widgets can be loaded and manipulated. To to this:
+
+  - Create a virtual environment in the desired project (recommend to isolate all installations to be perfomed from other previously done).
+  
+  ```powershell
+    py -m venv env
+    env\Scripts\activate
+  ```
+
+  - Install Jupyter Notebooks: `pip install notebook`
+  - Run a Jupyter Notebook sever: `jupyter notebook [,notebook] [,--no-browser]`
+
+The `ipywidgets` module (external module, outside of the standard library) provides access to a wide range of widgets and functionality based on them can be use to generate user interface for Jupyter Notebooks.
+
+  ```python
+    from ipywidgets import interact, interactive, fixed
+    import ipywidgets as widgets
+  ```
+
+### interact
+
+The interact function (`ipywidgets.interact`) automatically creates UI controls for exploring code and data interactively. The control created with a widget allow us to manipulate function arguments, before calling a given function with them.
+
+  - `interact` takes the function to be interactively studied and the arguments's initial values as arguments. Each argument's initial value determines the type of widget to be displayed (this way of creating widgets represents the abbreviation version of widget's creation).
+
+  ```python
+    def f(x): 
+      return x
+
+    interact(f, x=10,);
+  ```
+
+  - `interact` can be used as a decorator as well:
+
+  ```python
+    @interact(x=True, y=1.0)
+    def g(x,y):
+      return (x,y)
+  ```
+  - `fixed` is a function used to keep constant the value from a given function's argument, thus not showing a widget to manipulate the value when calling `interact`
+
+  ```python
+    def h(p,q):
+      return (p, q)
+
+    interact(h, p=5, q=fixed(20)); # A slider is only produced for p as the value of q is fixed
+  ```
+
+### Widgets Abbreviations
+
+When an integer-valued keyword argument of 10 (`x=10`) is passed to `interact`, it generates an integer-valued slider control with a range of [-10,+3*10]. In this case, 10 is an abbreviation for an actual slider widget:
+
+  ```python
+    IntSlider(min=-10, max=30, step=1, value=10)
+  ```
+
+We would get the same result typing:
+
+  ```python
+    interact(f, x=widgets.IntSlider(min=-10, max=30, step=1, value=10));
+  ```
+
+  Keyword argument | Widget
+  `True` or `False` | Checkbox
+  "Hi there" | Text
+  `value` or `(min,max)` or `(min,max,step)` if integers are passed | IntSlider
+  `value` or `(min,max)` or `(min,max,step)` if floats are passed | FloatSlider
+  `['orange','apple']` or `{'one':1,'two':2}` | Dropdown
+
+Abbreviations can also be specified using function annotations (similar to static types annotations in TypeScript)
+
+  ```python
+    def f(x:True): # Python 3 only
+      return x
+
+    interact(f);
+  ```
+
+### interactive
+
+`ipywidgets` provides another function, `interactive`, that is useful when we want to reuse the widgets that are produced or access the data that is bound to the UI controls.
+Unlike with `interact`, the return value of the function will not be displayed automatically. To do this we can use `IPython.display.display` function.
+
+  - `interactive` returns a widget instance, which is an `interactive`, a subclass of `VBox`, which is a container for other widgets.
+
+  ```python
+    from IPython.display import display
+
+    def f(a, b):
+      display(a + b)
+      return a+b
+
+    w = interactive(f, a=10, b=20)
+    type(w) # ipywidgets.widgets.interaction.interactive
+
+    w.children
+    # (IntSlider(value=10, description='a', max=30, min=-10),
+    # IntSlider(value=20, description='b', max=60, min=-20),
+    # Output())
+    
+    # to actually display the widget:
+    display(w)
+
+    w.kwargs # {'a': 10, 'b': 20}
+    w.result # 30
+  ```
+
+### Widgets Basics
 
 
