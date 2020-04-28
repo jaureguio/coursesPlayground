@@ -149,3 +149,36 @@ React makes some serious optimization on the DOM native events. Our event handle
 
 ## Manage State in a React Component with the useState Hook
 
+To manage state in a React component we make use of the `useState()` hook function from the `React` library. It takes an initial value to be used when mounting the component, and returns and array with a variable holding the current value of the state tracked and a function to update it.
+
+  - We could set a variable in the closure of the function component to track state and a function to modify it given some DOM event. However, this state setting won't be triggering a re-render of the component by itself, and if we configure it to do so, the whole component would be re-rendered, resetting the value of the state variable to the initial one give it by us at function declaration time (the value set with the function to update the state would be garbage collected)
+
+`React.useState()` was created with some perfomance optimization to remedy the case above:
+
+  - Initial state values are used only when the component is mounted.
+  - Updated values will be tracked between re-renders, allowing us to modify state without resetting issues.
+  - Only the DOM elements rendered consuming the given state are going to be re-rendered when that state is changed/updated.
+
+## Manage Side-Effects in a React Component with the useEffect Hook
+
+The `useEffect()` hook is used to perform side-effect operations. We passed to it a callback with all the side effects we want to execute. This callback is going to be ***invoked always after*** the component is mounted, and on some re-renders depending on the 2nd argument passed to this hook, which can take the following values:
+
+`useEffect()` 2nd argument | callback execution considerations
+`undefined` | Callback is executed after the component is mounted and with every re-render.
+`[]` (empty dependency array) | Callback is executed only when the component is mounted.
+`[val1, val2, ...valN]` | Callback is executed when the component is mounted and with every re-render triggered by values listed inside the dependency array.
+
+  - It is important to note that unmounting can also be handled with the callback passed to the `useEffect()` hook, especifically with its return statement.
+
+## Use a Lazy Initializer with useState
+
+The initial value for a piece of state it is necessary when the component declaring it is mounted for the first time. If a value is passed directly as the argument to `useState()` hook, it will be computed on the initial render and with each subsequent re-render of the component. However, after the first render of the component, this initial value is not needed, so its computation could lead to performance issues when the computational resources needed for this are important (parsing a JSON value, for example). 
+
+  - We can wrap the initial value passed to `useState()` hook with a callback that will get computed only when the value is needed (just when component is mounted, not re-rendered).
+  - It is important to note that the value computation is inteded to be synchronous!
+
+## Manage the useEffect Dependency Array
+
+React's `useEffect()` hooks will *eagerly* attempt to synchronize the "state of the world" with the state of the application. This normally won't lead to bugs (in fact, is does a great job at preventing bugs that plagued React apps before `useEffect` was available), but it can definitely be sub-optimal (and in some cases can result in an infinite-loop).
+
+To prevent unnecessary calls to the effect callback we can use the dependency array which `useEffect()` optionally takes as second argument. There are some rules we can set on ESlint  (though usage of the "eslint-plugin-react-hooks") to help us define all hooks properly/effectively when developing real applications (many tools like Create React App have this installed and configured by default).
