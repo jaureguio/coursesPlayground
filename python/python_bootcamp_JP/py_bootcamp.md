@@ -686,7 +686,6 @@ We can perform arithmetic on date objects to check for time differences:
 
 This give us the difference in days between the two dates. We can use the timedelta method to specify various units of times (days, minutes, hours, etc.)
 
-
 ### Python Debugger
 
 This module allows us to set debugger checkpoints in our code to inspect/track the current state of th program at that given point. This let us pause our program execution step-by-step.
@@ -708,148 +707,482 @@ This module allows us to set debugger checkpoints in our code to inspect/track t
     print(result2)
   ```
 
-  - We can use 'q' to quit the debugger.
+  \* We can enter 'q' to quit the debugger.
 
-## 15. Advanced OOP
+### Timing Code - timeit
 
-### Inheritance Revisted
-
-Recall that with inheritance, one or more derived classes can inherit attributes and methods from a base class. This reduces duplication, and means that any changes made to the base class will automatically translate to derived classes.
-
-  - A derived class does not have to include their own `__init__` (constructor) method because the base class `__init__` gets called automatically. However, if we do define an `__init__` method in the derived class, it will override the base one inherited.
-  - When a derived class defines it own `__init__` method, inside of it we can (and should) call the constructor from each inherited classes (in the case of multiple inheritance)
+This module provides a simple way to time small bits of Python code. It has both a CLI as well as a callable one. It avoids a number of common traps for measuring execution times. The `timeit` method on the timeit module takes in a string with the code to be run and a number representing the amount of call on the latter.
 
   ```python
-    class Car:
-      def __init__(self, wheels = 4):
-        self.wheels = wheels
-    
-    class Gasoline(Car):
-      def __init__(self, engine = 'Gasoline', tank_cap = 20):
-        Car.__init__(self)
-        self.engine = engine
-        self.tank_cap = tank_cap
-        self.tank = 0
-      
-      def refuel(self):
-        self.tank = self.tank_cap
+    import timeit
 
-    class Electric(Car):
-      def __init__(self, engine = 'Electric', kWh_cap = 60):
-        Car.__init__(self)
-        self.engine = engine
-        self.kWh_cap = kwh_cap
-        self.kWh = 0
+    # for loop
+    timeit.timeit("'-'.join(str(n) for n in range(100))", number=10000)
 
-      def recharge(self):
-        self.kWh = self.kwh_cap
+    # List comprehension
+    timeit.timeit("'-'.join([str(n) for n in range(100)])", number=10000)
 
-    class Hybrid(Gasoline, Electric):
-      def __init__(self, engine = 'Hybrid', tank_cap = 11, kWh_cap = 5):
-        Gasoline.__init__(self,engine,tank_cap)
-        Electric.__init__(self,engine,kWh_cap)
-
-      prius = Hybrid()
-      print(prius.tank) # 0
-      print(prius.kWh)  # 0
-
-      prius.recharge()
-      print(prius.kWh)  # 5
+    # Map()
+    timeit.timeit("'-'.join(map(str,range(100)))", number=10000)
   ```
 
-### Why do we use `self`?
+### Regular Expressions -re
 
-Python uses `self` to find the right set of attributes and methods to apply to an object.
+Regular expressions are text-matching patterns described with a formal syntax. We'll often hear regular expressions referred to as 'regex' or 'regexp' in conversation. Regular expressions can include a variety of rules, from finding repetitions, to text-matching and more.
 
-  - When we type: `prius.recharge()`, what really happens is that Python first looks up the class belonging to `prius` (Hybrid in this case), and then passes `prius` to the `Hybrid.recharge()` method. It is the same as running: `Hybrid.recharge(prius)`.
+#### Searching for Patterns in Text
 
-### Method Resolution Order (MRO)
-
-To resolve multiple inheritance conflicts when inherited classes shares same methods, Python employs MRO, which is a formal plan that is follow when running object methods.Take the following example:
+One of the most common uses for the `re` module is for finding patterns in text. 
 
   ```python
-    class A:
-      num = 4
+    import re
 
-    class B(A):
-      pass
-    
-    class C(A):
-      num = 5
+    patterns = ['term1', 'term2']
+    text = 'This is a string with term1, but it does not have other term.'
 
-    class D(B,C):
-      pass
+    for pattern in patterns:
+      matches = re.search(pattern, text)
+      if matches:
+        print('match found')
+      else:
+        print('not matches found')
   ```
-        A
-      num=4
-     /     \
-    /       \
-   B         C
-  pass     num=5
-   \         /
-    \       /
-        D
-       pass
 
-  - Here `num` is a class attribute belonging to all four classes. When called, `D.num` holds the value of 5. **Python obeys the first method in the chain that *defines* `num`**. The order followed is [D,B,C,A,object] where *object* is Python's base object class. In the example above, the first class to define and/or orverride a previously defined `num` property is `C`.
-
-### super()
-
-Python's built-in `super()` function provides a shortcut for calling base classes, because it automatically follows MRO.
-
-  - In its simples form with single inheritance:
+  - `re.search()` will take the pattern, scan the text and then return a Match object. If no pattern is found, `None` is returned. To give a clearer picture of this match object, we can run the `type()` function passing in the return from `re.search()`.
+  - The `Match` object returned by the search() method contains information about the match, including the original im=nput string, the regular expression used, and the location of the match.
 
   ```python
-    class BaseClass:
-      def __init__(self, x, y):
-        self.x = x
-        self.y = y
-
-    class DerivedClass(BaseClass):
-      def __init__(self, x, y, z):
-        super().__init__(x, y) # super() handles the passing of self to base class's __init__
-        self.z = z
+    # ...
+    matches.start() # 22
+    matches.end() # 27
   ```
 
-  - In a more dynamic form, with multiple inheritance like the one shown previously, `super()` can be use to properly manage method definitions:
+#### Split with Regular Expressions
 
   ```python
-    class A:
-      def truth(self):
-        return 'All numbers are even!'
+    split_term = '@'
 
-    class B(A):
-      pass
+    phrase = 'What is the domain name of someone with the email: hello@gmail.com'
 
-    class C(A):
-      def truth(self):
-        return 'Some numbers are even'
-
-    class D(B,C):
-      def truth(self, num):
-        if num % 2 == 0:
-          return A.truth(self)
-        return super().truth()  
-
-    d = D()
-    d.truth(6) # All numbers are even!      
-    d.truth(5) # Some numbers are even!     
+    re.split(split_term, phrase)
+    # ['What is the domain name of someone with the email: hello', 'gmail.com']
   ```
 
-## 16. Introduction to GUIs
+#### Finding all instances of a pattern
 
-We need to install Jupyter Notebooks in order to have an environment where the widgets can be loaded and manipulated. To to this:
+We can use the `re.findall()` to find all the instances of a pattern in a string.
 
-  - Create a virtual environment in the desired project (recommend to isolate all installations to be perfomed from other previously done).
+  ```python
+    re.findall('match', 'test phrase match is in middle')
+    # ['match']
+  ```
+
+#### re Pattern Syntax
+
+We can use *metacharacters* along with `re` to find specific types of patterns.
+
+  ```python
+    def multi_re_find(patterns, phrase):
+      """
+      Takes in a list of regex patterns
+      Prints a list of all matches
+      """
+      for pattern in patterns:
+        print(re.findall(pattern,phrase))
+        print('\n')
+  ```
+
+*Repetition Syntax*
+
+  pattern | result
+  'sd*' | 's' followed by zero or more 'd's
+  'sd+' | 's' followed by one or more 'd's
+  'sd?' | 's' followed by zero or one 'd'
+  'sd{3}' | 's' followed by three 'd's
+  'sd{2,3} | 's' followed by two to three 'd's
+
+  ```python
+    test_patterns = ['sd*', 'sd+', 'sd?', 'sd{3}', 'sd{2,3}']
+    test_phrase = 'sdsd..sssddd...sdddsddd...dsds...dsssss...sdddd'
+
+    multi_re_find(test_patterns, test_phrase)
+    # ['sd', 'sd', 's', 's', 'sddd', 'sddd', 'sddd', 'sd', 's', 's', 's', 's', 's', 's', 'sdddd']
+    # ['sd', 'sd', 'sddd', 'sddd', 'sddd', 'sd', 'sdddd']
+    # ['sd', 'sd', 's', 's', 'sd', 'sd', 'sd', 'sd', 's', 's', 's', 's', 's', 's', 'sd']
+    # ['sddd', 'sddd', 'sddd', 'sddd']
+    # ['sddd', 'sddd', 'sddd', 'sddd']
+  ```
+
+#### Character Sets
+
+Character sets are used when we wish to match any one of a group of characters at apoint in the input. Brackets are used to construct character set inputs.
+
+  ```python
+  test_patterns = ['[sd]','s[sd]+']
+
+  multi_re_find(test_patterns, test_phrase)
   
-  ```powershell
-    py -m venv env
-    env\Scripts\activate
+  # '[sd]' means either s or d
+  # ['s', 'd', 's', 'd', 's', 's', 's', 'd', 'd', 'd', 's', 'd', 'd', 'd', 's', 'd', 'd', 'd', 'd', 's', 'd', 's', 'd', 's', 's', 's', 's', 's', 's', 'd', 'd', 'd', 'd']
+
+  # 's[sd]+' followed by one or more s or d
+  # ['sdsd', 'sssddd', 'sdddsddd', 'sds', 'sssss', 'sdddd']
   ```
 
-  - Install Jupyter Notebooks: `pip install notebook`
+#### Exclusion
 
-  - Run a Jupyter Notebook sever: `jupyter notebook [,notebook] [,--no-browser]`
+We can use '^' to exclude terms by incorporating it into the bracket syntax notation. for example: [^...] will match any single character NOT in the brackets.
+
+  ```python
+    test_phrase = 'This is a string! but it has punctuation. How can we remove it?'
+
+    re.findall('[^!.? ]+', test_phrase) # Add '+' to check  for matches that are NOT a !,.,?, or space that appear at least once
+
+    # ['This', 'is', 'a', 'string', 'but', 'it', 'has', 'punctuation', 'How', 'can', 'we', 'remove', 'it']
+  ```
+
+#### Character Ranges
+
+As character sets grow larger, typing every character that should (or should not) match could become very tedious. A more compact format using character ranges lets you define a character set to include all of the contiguous characters between a start and stop point. The format uesd is '[start-end]'.
+
+  - Common use cases are to search for a specific range of letters in the alphabet. For instance, [a-f] would return mathces with any occurence of letters between a and f.
   
-### interact
+  ```python
+    test_phrase = 'This is an example sentence. Lets see if we can find some ltters.'
+
+    test_patterns = ['[a-z]',       # sequences of lower case letters
+                     '[A-Z]',       # sequences of upper case letters
+                     '[a-zA-Z]',    # sequences of lower or upper case letters
+                     '[A-Z][a-z]+'] # one upper case letter followed by lowe case letters
+    multi_re_find(test_patterns, test_phrase)
+
+    # ['h', 'i', 's', 'i', 's', 'a', 'n', 'e', 'x', 'a', 'm', 'p', 'l', 'e', 's', 'e', 'n', 't', 'e', 'n', 'c', 'e', 'e', 't', 's', 's', 'e', 'e', 'i', 'f', 'w', 'e', 'c', 'a', 'n', 'f', 'i', 'n', 'd', 's', 'o', 'm', 'e', 'l', 't', 't', 'e', 'r', 's']
+
+    # ['T', 'L']
+
+    # ['T', 'h', 'i', 's', 'i', 's', 'a', 'n', 'e', 'x', 'a', 'm', 'p', 'l', 'e', 's', 'e', 'n', 't', 'e', 'n', 'c', 'e', 'L', 'e', 't', 's', 's', 'e', 'e', 'i', 'f', 'w', 'e', 'c', 'a', 'n', 'f', 'i', 'n', 'd', 's', 'o', 'm', 'e', 'l', 't', 't', 'e', 'r', 's']
+
+    # ['This', 'Lets']
+  ```
+
+#### Escape Codes
+
+Code | Meaning
+\d | a digit
+\D | a non-digit
+\s | whitespace (tab, space, newline, etc.)
+\S | non-whitespace
+\w | alphanumeric
+\W | non-alphanumeric
+
+ \* A backslash must itself be escaped in normal Python strings.
+ \* Raw strings created by prefixing the literal value with r, eliminates the need of escaping backslashes on regex patterns.
+
+### StringIO objects and the io Module
+
+We can create in-memory file-like objects within our programs that Python treats the same way. Text data is stored in a StringIO object, while binary data would be stored in a BytesIO object. This object can then be used as input or outpu to most functions that would expect a standard file object.
+
+  ```python
+    import io
+
+    message = 'This is just a normal string.'
+
+    f = io.StringIO(message)
+    f.read()  # 'This is just normal string.'
+    f.write(' Second line written to file like object')
+
+    f.seek(0) # Reset the cursor just like we would a file
+    f.read()  # Read again: 'This is just a normal string. Second line written to file like object'
+    f.close() # Close the object when contents are no longer needed
+  ```
+
+## 14. Advanced Python Objects & Data Structures
+
+### Advanced Numbers
+
+#### Hexadecimal
+
+From wikipedia:
+
+> In mathematics and computing, hexadecimal (also `base 16` or `hex`) is a positional numeral system with a radix, or base, of 16. It uses sixteen distinct symbols, most often the symbols 0-9 to represent values zero to nine, and A to F (or alternatively, a to f) to represent values ten to fifteen. One could write 0x2AF3 or 2AF3<sub>16</sub>, depending of the choice of notation.
+
+  - Representing 0x2AF3 into its equivalent in decimals:
+
+    (2<sub>16</sub> x 16<sup>3</sup>) + (A<sub>16</sub> x 16<sup>2</sup>) + (F<sub>16</sub> x 16<sup>1</sup>) + (3<sub>16</sub> x 16<sup>0</sup>) =
+    (2 x 4096) + (10 x 256) + (15 x 16) + (3 x 1) = 
+    10995
+  
+In Python we use the `hex()` function to convert a hexadecimal representation of a passed decimal number.
+
+  ```python
+    hex(246) # '0xf6'
+  ```
+
+#### Binary
+
+In Python there is the `bin()` function that takes numbers and converts it to binary format.
+
+  ```python
+    bin(1234) # '0b10011010010' 
+  ```
+
+#### Exponentials, Absolute and Round Values
+
+*Exponentials*
+
+The function `pow()` takes two arguments, equivalent to x^y. With three arguments it is equivalent to (x^y)%z, but may be more efficient for long integers.
+
+  ```python
+    pow(3,4) # 81
+
+    pow(3,4,5) # 1
+  ```
+
+*Absolute*
+
+The function `abs()` returns the absolute value of a number. The argument may be an integer or a floating point number. If the argument is a complex number, its magnitude is returned.
+
+  ```python
+    abs(-3.14) # 3.14
+  ```
+
+*Round*
+
+The function `round()` will round a number to a given precision in decimal digits (default 0 digits). It does not convert integers to floats.
+
+  ```python
+    round(3,2)            # 3
+    round(3.1,1)          # 3.1
+    round(395,-2)         # 400
+    round(3.1415926535,2) # 3.14
+  ```
+
+**Python has a built-in math library that is also useful to play around with in case additional/more specific mathematical operations.
+
+### Advanced Strings
+
+Check `dir(str)` and `help(str)` methods to discover all functionality available on the `str` object.
+
+#### Built-in RegExp
+
+Strings have some built-in methods that can resemble regular expression operations. We can use `split()` to split the string at a certain element and return a list of the results. We can use `partition()` to return a tuple that includes the first occurrence of the separator sandwiched between the first half and the end half.
+
+  ```python
+    s = 'hello'
+
+    s.split('e')     # ['h', 'llo']
+    s.partition('l') # ('he', 'l', 'lo')
+  ```
+
+### Advanced Sets
+
+#### Some Basic Methods
+
+  ```python
+    s = set() # empty set
+    s.add(1)
+    s.add(2)
+    print(s)  # {1,2}
+
+    s.clear() # removes all element from the set
+    print(s)  # set()
+
+    s = {1,2,3}
+    sc = s.covpy()
+    s.add(4)  # {1,2,3,4}
+    print(sc) # {1,2,3} 
+  ```
+
+#### difference & difference_update
+
+`difference()` returns the difference of two or more sets. `difference_update()` updates the set upon which the method is called with the one passed into it.
+
+  ```python
+    # syntax is: set1.difference(set2)
+    s.difference(sc) # {4}
+
+    s1 = {1,2,3}
+    s2 = {1,4,5}
+    s1.difference_update(s2)
+    print(s1) # {2,3}
+  ```
+
+#### discard
+
+Removes an element from a set if it is a member. If the element is not a member, do nothing.
+
+  ```python
+    print(s) # {1,2,3,4}
+
+    s.discard(2)
+    print(s) # {1,3,4}
+  ```
+
+#### intersection & intersection_update
+
+`intersection()` returns the intersection of two or more sets as a new set. (i.e. elements that are common to all of the sets). `intersection_update()` updates the set upon which the method is called with the common elements on the sets passed into it.
+
+  ```python
+    s1 = {1,2,3}
+    s2 = {1,2,4}
+
+    s1.intersection(s2) # {1,2}
+    print(s1) # {1,2,3}
+
+    s1.intersection_update(s2)
+    print(s1) # {1,2}
+  ```
+
+#### isdisjoint, issubset, issuperset
+
+`isdisjoint()` will return `True` if two sets have a null intersection.
+
+`issubset()` reports whether another set contains the set the method is called upon.
+`issuperset()` reports whether the set upon the method is called contains another set.
+
+  ```python
+    s1 = {1,2}
+    s2 = {1,2,4}
+    s3 = {5}
+
+    s1.isdisjoint(s2) # False
+    s1.isdisjoint(s3) # True
+
+    s1.issubset(s2) # True
+    s2.issubset(s1) # False
+
+    s1.issuperset(s2) # False
+    s2.issuperset(s1) # True
+  ```
+
+#### symmetric_difference & symmetric_update
+
+`symmetric_difference()` returns the symmetric difference of two sets as a new set. (i.e. all elements that are in exactly one of the sets.)
+
+  ```python 
+    s1.symmetric_difference(s3) # {1,2,5}
+  ```
+
+#### union & update
+
+`union()` returns the union of two sets (i.e. all elements that are in either set.).
+`update()` update a set with the union of itself and others.
+
+  ```python
+    s1.union(s2)  # {1,2,3}
+    print(s1)     # {1,2}
+
+    s1.update(s2)
+    print(s1)     # {1,2,4}
+  ```
+
+### Advanced Dictionaries
+
+Just like List Comprehensions, Dictionary Data Types also support their own version of comprehension for quick creation. The syntax is as follows: 
+
+  ```python 
+    dict = {x:x**2 for x in range(10)}
+    print(dict) # {0: 0, 1: 1, 2: 4, 3: 9, 4: 16, 5: 25, 6: 36, 7: 49, 8: 64, 9: 81}
+  ```
+
+  - One of the reasons it is not as commonly used is the difficulty in structuring key names that are not based off the values.
+
+#### Iteration over keys, values and items
+
+*Viewing keys, values and items*
+
+By themselves the `keys()`, `values()` and `items()` methods return a dictionary *view object*. This is not a separate list of items. Instead, the view is always tied to the original dictionary.
+
+  ```python
+    d = {'k1':1, 'k2':2}
+
+    key_view = d.keys()
+    print(key_view) # dict_keys(['k1','k2'])
+
+    d['k3'] = 3
+    print(key_view) # dict_keys(['k1', 'k2', 'k3'])
+  ```
+
+### Advanced Lists
+
+  ```python
+    # APPEND
+    list1 = [1,2,3]
+    list1.append(4)
+    list1.append([5,6])
+    print(list1) # [1,2,3,4,[5,6]]
+
+    # count(): returns the number of times a passed value occurs in the list
+    list1.count(10) # 0
+
+    # extend(): appends each element from an iterable passed
+    x = [1,2,3]
+    x.extend([4,5])
+    print(x) # [1,2,3,4,5]
+
+    # index(): will return the index of whatever element is placed as an argument. Note that if the element is not in the list an ValueError is raised.
+    list1.index(2)  # 1
+    list1.index(12) # ValueError: 12 is not in list
+
+    # insert(): takes in two arguments, insert and object. This method places the object at the index supplied, without overriding existing values at that index. If the specified index is out of list range, the value is added to the back of the list
+    list1.insert(2,'inserted')
+    print(list1) # [1,2,'inserted',3,4,[5,6]]
+
+    # pop(): returns the last item from a list, removing it from the list. If an index is provided, the value at it is removed from the list.
+    ele = list1.pop(1) # pop the second element
+    print(list1, ele) # [1,'inserted',3,4,[5,6]], 2]
+
+    # remove(): removes the FIRST occurrence of a given value
+    list1.remove('inserted')
+    print(list1) # [1,3,4,[5,6]] 
+vd
+    # reverse(): reverses a list in place.
+
+    # sort(): sorts a list in place. If the named argument 'reverse' is set to True, the list is sorted in reverse. Note this is different than simply reversing the order of items
+  ```
+
+We need to be careful when using methods that modify a list in-place when our goal is to obtain a copy of a list. The methods modifying lists in-place return None. In order to get a copy of a list, we can use the `copy()` method.
+
+### With Statement Context Managers
+
+When we open a file using `f = open(test.txt)`, the file stays open until we specifically call f.close(). Should an exception be raised while working with the file, it remains open. This can lead to vulnerabilities in our code, and inefficient use of resources.
+
+A context manager handles the opening and closing of resources, and provides a built-in `try/finally` block should any exceptions occur.
+
+  ```python 
+    p = open('oops.txt', 'a')
+    p.readlines()
+    p.close()
+
+    # UnsuppoertedOperation: not readable
+    # The file is still open after the error is thrown and this could led to unexpected results in the future
+    p.write('Add more text') # 13 (??)
+
+    # We could protect the file with a try/except/finally block
+    p = open('oops.txt', 'a')
+    try: 
+      p.readlines()
+    except:
+      print('An exception was raised!')
+    finally:
+      p.close()
+    
+    p.write('Add more text') # ValueError: I/O operation on closed file
+  ```
+
+What was done in the second half of the previous code block (opening the file, enclosing our code in a `try/finally`block, and closing the file on error at the same time) can be done in line of code with the use of `with`:
+
+  ```python
+    # the syntax follows: with [resource] as [target]: do something
+
+    with open('oops.txt', 'a') as p:
+      p.readlines()
+    
+    # UnsupportedOperation: not readable
+
+    # Later on...
+    p.write('Add more text') # ValueError: I/O operation on closed file/
+  ```
+
+
 
