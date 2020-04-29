@@ -189,4 +189,6 @@ We can share our hooks logic implementation (in this case storing a piece of sta
 
 When such hook abstractions are created, we are creating what's commonly known as Custom Hooks. These hooks should follow a naming convention in order for us to take advantage of some tools created by the React team such as the eslint-plugin-react-hooks plugin, which detects any function whose name is prefixed with the word 'use' to enforce some React hooks conventions and best practices.
 
+## Manipulate the DOM with React refs
+
 
