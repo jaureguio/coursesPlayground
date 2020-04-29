@@ -18,7 +18,7 @@
       function Greeting() {
         const [name, setName] = React.useState(() => {
           console.log('You will only compute this value when component mounts!')
-          window.localStorage.getItem('name') || ''
+          return window.localStorage.getItem('name') || ''
         })
         const handleChange = e => {
           setName(e.target.value)
