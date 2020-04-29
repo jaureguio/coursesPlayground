@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>
+      Create Custom Reusable Hooks
+    </title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script src="https://unpkg.com/@babel/standalone@7.8.3/babel.js"></script>
+    <script src="https://unpkg.com/react@16.12.0/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@16.12.0/umd/react-dom.development.js"></script>
+    <!-- The next script incorporates an object called PropTypes as a global variable.It contains multiple type-checker functions we can use to validate our components' props -->
+    <script src="https://unpkg.com/prop-types@15.7.2/prop-types.min.js"></script>
+    <script type="text/babel">
+      function useLocalStorageState(key,defaultValue = '') {
+        const [state, setState] = React.useState(() => {
+          console.log('From useState')
+          return window.localStorage.getItem(key) || defaultValue
+        })
+
+        React.useEffect(() => {
+          console.log('From useEffect')
+          window.localStorage.setItem(key, state)
+        }, [key, state])
+
+        return [state, setState]
+      }
+
+      function Greeting() {
+        const [name, setName] = useLocalStorageState('name')
+
+        const handleChange = e => {
+          setName(e.target.value)
+        }
+        
+        return (
+          <div>
+            <form>
+              <label htmlFor='name'>Name: </label>
+              <input type='text' value={name} id='name' onChange={handleChange} />
+            </form>
+            {name ? <strong>{name}</strong> : 'Please enter your name!'}
+          </div>
+        )
+      }
+
+      function Counter() {
+        const [count, setCount] = React.useState(0)
+        return (
+          <div>
+            <button onClick={()=>setCount(count=>++count)}>{count}</button>
+            <Greeting />
+          </div>
+        )
+      }
+
+      ReactDOM.render(<Counter />, document.getElementById('root'))
+      
+    </script>
+  </body>
+</html>

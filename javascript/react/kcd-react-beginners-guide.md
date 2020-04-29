@@ -172,9 +172,9 @@ The `useEffect()` hook is used to perform side-effect operations. We passed to i
 
 ## Use a Lazy Initializer with useState
 
-The initial value for a piece of state it is necessary when the component declaring it is mounted for the first time. If a value is passed directly as the argument to `useState()` hook, it will be computed on the initial render and with each subsequent re-render of the component. However, after the first render of the component, this initial value is not needed, so its computation could lead to performance issues when the computational resources needed for this are important (parsing a JSON value, for example). 
+The initial value for a piece of state it is necessary when the component declaring it is mounted for the first time. If a value is passed directly as the argument to `useState()` hook, it will be computed on the when component mounts and with each subsequent re-render of the component. However, after mounting the component for the first time, this initial value is not needed anymore, so its computation could lead to performance issues when the computational resources needed for this are important (parsing a JSON value, for example). 
 
-  - We can wrap the initial value passed to `useState()` hook with a callback that will get computed only when the value is needed (just when component is mounted, not re-rendered).
+  - We can wrap the initial value passed to `useState()` hook with a callback that will get invoked and return that value only when the value is needed (when component is mounted, not re-rendered).
   - It is important to note that the value computation is inteded to be synchronous!
 
 ## Manage the useEffect Dependency Array
@@ -182,3 +182,11 @@ The initial value for a piece of state it is necessary when the component declar
 React's `useEffect()` hooks will *eagerly* attempt to synchronize the "state of the world" with the state of the application. This normally won't lead to bugs (in fact, is does a great job at preventing bugs that plagued React apps before `useEffect` was available), but it can definitely be sub-optimal (and in some cases can result in an infinite-loop).
 
 To prevent unnecessary calls to the effect callback we can use the dependency array which `useEffect()` optionally takes as second argument. There are some rules we can set on ESlint  (though usage of the "eslint-plugin-react-hooks") to help us define all hooks properly/effectively when developing real applications (many tools like Create React App have this installed and configured by default).
+
+## Create Reusable Custom Hooks
+
+We can share our hooks logic implementation (in this case storing a piece of state in the browser local storage) between different components or even with different variables within the same component. This can be done simply by wrapping hooks logic inside a function an abstract it from the original component implmenting it. This is very easy to do because the way hooks's API is designed, following a simple vanilla JavaScript approach.
+
+When such hook abstractions are created, we are creating what's commonly known as Custom Hooks. These hooks should follow a naming convention in order for us to take advantage of some tools created by the React team such as the eslint-plugin-react-hooks plugin, which detects any function whose name is prefixed with the word 'use' to enforce some React hooks conventions and best practices.
+
+
