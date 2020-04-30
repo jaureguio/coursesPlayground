@@ -239,10 +239,10 @@ The following diagram can be usefull to clarify the way hooks are invoked depend
 
 ## Make Basic Forms with React
 
+When dealing with Forms in React we have to make sure to avoid handling the form or input directly (through DOM APIs) in order to get input from the user. Synthetic events in React allow the `event` object from the DOM event to be passed into our handlers, allowing us to retrieve input through it.
 
+  - Pressing the enter key or any button of type submit inside the form will automatically trigger a form submit, making the browser send a POST request with the user's supplied data and refresh the page.
+  - Using `event.preventDefault()` inside the `onSubmit` handler of the form will prevent the default browser behaviour when submittin a form, allowing us to continue managing apps logic through JS/React.
+  - In order to follow best practices and enhance user input data accessing, it is recommended to identify our JSX elements by means of an id or name attribute.
+  - All buttons inside a form, when no type is provided as attribute, are considered submit buttons. It is best practice to explicitly define the type of each button (submit, button or reset).
 
-## Make Dynamic Forms with React
-
-## Controlling Form Values with React
-
-## Using React Error Boundaries to Handle Errors in React Components
