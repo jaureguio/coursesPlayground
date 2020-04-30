@@ -246,3 +246,20 @@ When dealing with Forms in React we have to make sure to avoid handling the form
   - In order to follow best practices and enhance user input data accessing, it is recommended to identify our JSX elements by means of an id or name attribute.
   - All buttons inside a form, when no type is provided as attribute, are considered submit buttons. It is best practice to explicitly define the type of each button (submit, button or reset).
 
+## Make Dynamic Forms with React
+
+We could dynamically check form input by revising what's been typed by users as they are typing. This can be achieved through the onChange event from the input element. Defining a handler for this event with the desired checking code is all we need to set.
+
+  ```javascript
+    function handleChange(event) {
+      const input = event.target.value
+        
+      // This piece of code add dynamic input checking; in this case we check to see if what's typed is all lowercased or not, changing some piece of state to react accordingly 
+      if(input !== input.toLowerCase()) {
+        setUpper(true)
+      } else {
+        setUpper(false)
+      }
+      setName(input)
+    }
+  ```
