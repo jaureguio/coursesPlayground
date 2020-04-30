@@ -168,7 +168,7 @@ The `useEffect()` hook is used to perform side-effect operations. We passed to i
 `[]` (empty dependency array) | Callback is executed only when the component is mounted.
 `[val1, val2, ...valN]` | Callback is executed when the component is mounted and with every re-render triggered by values listed inside the dependency array.
 
-  - It is important to note that unmounting can also be handled with the callback passed to the `useEffect()` hook, especifically with its return statement.
+  - It is important to note that unmounting can also be handled with the callback passed to the `useEffect()` hook, especifically with its return statement. The return value should typically be a callback as well.
 
 ## Use a Lazy Initializer with useState
 
@@ -191,4 +191,58 @@ When such hook abstractions are created, we are creating what's commonly known a
 
 ## Manipulate the DOM with React refs
 
+Because the JSX elements we return from a component are not DOM elements by itself but React elements that are going to be rendered to the DOM, ot get access to the DOM elements rendered later on, React uses a `ref` prop where we can pass a value to hold a reference to the DOM element after its rendering. This value can then be use to manipulate the rendered element from outside React, meaning that we could modify it without executing a re-render of the element by React.
 
+  - React provides another hook to create a value to use as a ref holder, the `React.useRef()`, which return an object with a `current` property in it that will hold any given node referenced by the hook after it is mounted in the DOM
+
+  ```javascript
+  function Tilt({childre}) {
+    const tiltRef = React.useRef()
+    
+    React.useEffect(()=>{
+      const tiltNode = tiltRef.current // tiltNode now becomes a reference to the DOM element rendered!
+      // Side effects to perform (Manipulating the DOM is a side effect)...
+      return () =>{
+        // cleanup code to be run when unmounting the DOM element
+      }
+    })
+
+    return (
+      <div ref={tiltRef}>
+        <div>{children}</div>
+      </div>
+    )
+  }
+  ```
+
+  - `React.useEffect()` can take an argument that we can use as initial value to the `current` property on the ref object return.
+  - The `current` property it is only set after the DOM element, which gets passed the ref object, is mounted. The callback passed to `React.useEffect()` is used to set and manipulate this ref value because of its execution after the DOM element is mounted.
+  - Be aware that even when a DOM element is removed from the page, references to it and event handlers would still persist in memory. This could become a performance issue with subsequent mounts and unmounts of it. We need to make sure to perform the clean up work after the dom is removed from the page, which can be achieved through the return callback of the callback passed to `React.useEffect()`.
+
+## Understand the React Hook Flow
+
+Understanding the order in which React hooks are called can be really beneficial to the way in which we implement the logic inside our components.
+
+Different component's lifecycle triggers the execution of React hooks callbacks in various ways. Some considerations to keep in mind are:
+
+  - Callback passed into `React.useState()` hook is going to be run only when component mounts in order to obtain an initial value from it. Further re-renders of the component will not run it and will handle previous state values (this is not true when an expression is passed, in which case it will be computed on mounting and with every re-render).
+  - Callback passed to `React.useEffect()` will be run after the component mounts on the page. Further invocations of the callback on re-renders will depend on a dependency array being passed as a second argument to `React.useEffect()` or not. When a component unmounts, the return callback of the effect function is usually run to perform clean up works to improve memory performance.
+    - No dependency list will make the callback to be run on component mounting, re-rendering and unmounting
+    - An empty dependency list passed makes the callback to be called on mount and unmounting only.
+    - A dependency list with values in it signifies the callback will be run always on mounting, but also on re-renders provoked by changes in any value listed on the dependency array. 
+      - Unmounting will follow the same behaviour as well; fully unmounting (entirely removing) a component from page or when re-rendering a component because a value in the list changes.
+    - Note that side effects (`React.useEffect()` callbacks) from child components are run first than parent's after rendering elements on the page. The same goes for side effects's clean up callbacks; clean up is run before running new side effects callbacks. 
+
+The following diagram can be usefull to clarify the way hooks are invoked depending of component's lifecycle:
+
+![Hooks Flow](18-hook-flow.png)
+
+## Make Basic Forms with React
+
+
+
+## Make Dynamic Forms with React
+
+## Controlling Form Values with React
+
+## Using React Error Boundaries to Handle Errors in React Components
