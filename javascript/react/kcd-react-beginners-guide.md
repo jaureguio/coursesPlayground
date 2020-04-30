@@ -263,3 +263,11 @@ We could dynamically check form input by revising what's been typed by users as 
       setName(input)
     }
   ```
+
+## Controlling Form Values with React
+
+When a value property on DOM elements, like inputs, is explicitly set by React, the element is said to become a controlled component. This way, combined with dynamically handling input values from user, allows us to control what is submitted in the form.
+
+  - The `value` property of an input element can be set to be equal to some piece of state so when it changes, the input will be updated accordingly as well. This way we can dynamically modify/adapt user's input following any requirement we set or our application requires.
+
+## Using React Error Boundaries to Handle Errors in React Components
