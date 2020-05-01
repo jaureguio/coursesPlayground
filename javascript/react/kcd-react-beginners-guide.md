@@ -271,3 +271,33 @@ When a value property on DOM elements, like inputs, is explicitly set by React, 
   - The `value` property of an input element can be set to be equal to some piece of state so when it changes, the input will be updated accordingly as well. This way we can dynamically modify/adapt user's input following any requirement we set or our application requires.
 
 ## Using React Error Boundaries to Handle Errors in React Components
+
+There is a special kind of component officially called `ErrorBoundary` that makes use of some functionality only accesible by implementing the component as a class and extending from the `React.Component` built-in class. This `ErrorBoundary` class component has to have a static method called `getDerivedStateFromError`, which is going to be called by React when there is any error thrown during the React call stack (i.e. by a render call, useEffect, etc.).
+
+  - The `getDerivedStateFromError` static method is going to be called with the error passed to it after this is thrown in our app
+    - The whatever is return by the static method is going to be set as the new state for the `ErrorBoundary` component (The initial setting of the component is generally build with a `state` object containing an `error` property set to `null`, which is updated when an error occurs and the static method is called).
+    - Based on the value of the state of the class component, we can determine what is going to be rendered by the class (the return value of a `render` method is what's render by React).
+  - Only errors produced by an `ErrorBoundary` component's children AND belonging to the React call stack are going to be catched by the class component.
+  - Notice that all children from an `ErrorBoundary` class component are going to be replaced by the fallback provided when an error occurs. This is important to understand because doing so will let us see the importance of using multiple error boundaries through out our app with specific fallbacks depending the children of each. The deeper the `ErrorBoundary` is in our React DOM tree, the more specific should be the fallback implemented.
+
+  ```javascript
+    class ErrorBoundary extends React.Component {
+      state = {error:null}
+
+      static getDerivedStateFromError(error) {
+        return {error}
+      }
+
+      render() {
+        const {error} = this.state
+        if (error) {
+          return <this.props.FallbackComponent error={error} />
+        }
+        return this.props.children
+      }
+    }
+  ```
+
+There is a library called 'react-error-boundary' that provides a 'ReactErrorBoundary' object with an 'ErrorBoundary' component as property that we can use to reproduce the class component boilerplate shown in the snippet above with additional optimizations.
+
+## Use the Key Prop When Rendering a List with React
