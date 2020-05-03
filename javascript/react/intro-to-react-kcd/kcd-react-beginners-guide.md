@@ -164,6 +164,7 @@ To manage state in a React component we make use of the `useState()` hook functi
 The `useEffect()` hook is used to perform side-effect operations. We passed to it a callback with all the side effects we want to execute. This callback is going to be ***invoked always after*** the component is mounted, and on some re-renders depending on the 2nd argument passed to this hook, which can take the following values:
 
 `useEffect()` 2nd argument | callback execution considerations
+--- | --- 
 `undefined` | Callback is executed after the component is mounted and with every re-render.
 `[]` (empty dependency array) | Callback is executed only when the component is mounted.
 `[val1, val2, ...valN]` | Callback is executed when the component is mounted and with every re-render triggered by values listed inside the dependency array.
