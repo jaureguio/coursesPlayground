@@ -306,3 +306,9 @@ When rendering a list of React elements, React asked us to set an unique `key` p
 
   - It is important that the key value is unique and exclusive for each item even between re-renders (this means that its index on the array will not be a valid key prop, for example).
   - When a `key` prop is not provided, or an invalid value is, we are going to be dealing with strange bugs in our application. React will compare the items in the previous JSX provided to generate the elements to render (by using a reference to this JSX code) and the new items provided to be rendered; React won't be able to tell differences between elements if one is removed or the order is changed between re-renders, so element values could be swapped/mixed unexpectively.
+
+## Lifting and Colocating React State
+
+In situations where some pieces of state belonging to a particular component is needed inside another component at the same React tree level (i.e. a sibling component), the way to proceed is to 'lift up' the state from the former component into the *nearest common parent component* of all the elements that needs to interact with that state, from where we can then pass it down (both the actual state value and a mechanism for updating that state).
+
+  - It is important to note that in many occasions, an application refactoring or modification make a previous state lifting unnecessary, so we have to remember to *colocate* back the state into the component that actually uses. This helps improving maintainability of our components/apps in the long run.
