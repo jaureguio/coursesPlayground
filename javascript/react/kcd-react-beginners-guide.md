@@ -301,3 +301,8 @@ There is a special kind of component officially called `ErrorBoundary` that make
 There is a library called 'react-error-boundary' that provides a 'ReactErrorBoundary' object with an 'ErrorBoundary' component as property that we can use to reproduce the class component boilerplate shown in the snippet above with additional optimizations.
 
 ## Use the Key Prop When Rendering a List with React
+
+When rendering a list of React elements, React asked us to set an unique `key` prop for each of the React elements. This is required as an optimization and for React to work properly when re-rendering the components. This key will allow React to keep track of the element between re-renders (was the element removed, relocated or added?), making possible for example of *keeping track of the focus on an element that changes its order on the list*.
+
+  - It is important that the key value is unique and exclusive for each item even between re-renders (this means that its index on the array will not be a valid key prop, for example).
+  - When a `key` prop is not provided, or an invalid value is, we are going to be dealing with strange bugs in our application. React will compare the items in the previous JSX provided to generate the elements to render (by using a reference to this JSX code) and the new items provided to be rendered; React won't be able to tell differences between elements if one is removed or the order is changed between re-renders, so element values could be swapped/mixed unexpectively.
