@@ -312,3 +312,25 @@ When rendering a list of React elements, React asked us to set an unique `key` p
 In situations where some pieces of state belonging to a particular component is needed inside another component at the same React tree level (i.e. a sibling component), the way to proceed is to 'lift up' the state from the former component into the *nearest common parent component* of all the elements that needs to interact with that state, from where we can then pass it down (both the actual state value and a mechanism for updating that state).
 
   - It is important to note that in many occasions, an application refactoring or modification make a previous state lifting unnecessary, so we have to remember to *colocate* back the state into the component that actually uses. This helps improving maintainability of our components/apps in the long run.
+
+## Make HTTP Requests with React
+
+Retriving and/or persisting data from a server is a basic operation in any useful application. This actions can be done by means of HTTP requests, which are inherently asynchronous operations in nature and because of this, *side-effects*. We need to handle different states in our app to reflect asynchronous changes occuring because of side-effects triggered by the requests.
+
+React.useEffect hooks is the place intended to deal with operation that generates side-effects so we need to put the asynchronous code inside of this hook and base on the different stages of the request, manipulate a piece of state to control whats rendered to the page.
+
+  - The simplest approach possible to perform HTTP requests uses the browser's window fetch API which returns a `promise` which allows to handle asynchronous operations in a synchronous-like manner.
+
+## Handle HTTP Errors with React
+
+>Sometimes a server request fails and we need to display a helpful error message to the user.
+
+We can handle failed HTTP requests using `.catch` method on the request promise, passing a callback where both a status and error state variables are handled to update the state of the application accordingly.
+
+With respect to the `status` state variable:
+
+> A common mistake people make is to create a state variable called `isLoading` and set that to `true` or `false`. Instead, we can set a `status` variable which can be set to `idle`, `pending`, `resolved` or `rejected`.
+
+## React Dev Tools
+
+## Build and Deploy a React Application with Codesandbox, GitHub, and Netlify
