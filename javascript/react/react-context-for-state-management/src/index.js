@@ -1,34 +1,27 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import ReactDOM from 'react-dom';
 import LoginPage from './LoginPage';
 import MainPage from './MainPage';
-import { UserProvider } from './UserContext';
+import { UserProvider, UserContext } from './UserContext';
+import { EmailProvider } from './EmailContext';
+import { NotificationProvider } from './NotificationContext'
+
 import './index.css';
 
-class Root extends React.Component {
-  state = {
-    currentUser: null
-  };
-
-  handleLogin = user => {
-    this.setState({ currentUser: user });
-  };
-
-  handleLogout = () => {
-    this.setState({ currentUser: null });
-  };
-
-  render() {
-    return (
-      <UserProvider value={{
-        currentUser: this.state.currentUser, 
-        onLogin: this.handleLogin,
-        onLogout: this.handleLogout
-      }}>
-        { this.state.currentUser ? <MainPage /> : <LoginPage /> }
-      </UserProvider> 
-    )
-  }
+function Root () {
+  const { currentUser } = useContext(UserContext)
+  return (
+    currentUser ? <MainPage /> : <LoginPage />
+  )
 }
 
-ReactDOM.render(<Root />, document.querySelector('#root'));
+ReactDOM.render(
+  <UserProvider>
+    <NotificationProvider>
+      <EmailProvider>
+        <Root />
+      </EmailProvider>
+    </NotificationProvider>
+  </UserProvider>,
+  document.querySelector('#root')
+);
