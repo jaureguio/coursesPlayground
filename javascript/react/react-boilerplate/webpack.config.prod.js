@@ -15,14 +15,4 @@ const prodConfig = merge(baseConfig, {
   }
 })
 
-prodConfig.module.rules[0].options.presets[0] = ['@babel/preset-env', {
-  targets: [
-    'last 2 versions',
-    'not < 2%',
-    'not dead',
-    'not ie 11'
-  ],
-  useBuiltIns: 'entry'
-}]
-
 module.exports = prodConfig
