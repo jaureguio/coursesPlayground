@@ -1,12 +1,14 @@
-import React from 'react';
-import { render } from '@testing-library/react'
-import '@testing-library/jest-dom'
-// import '@testing-library/cleanup-after-each'
+import React from 'react'
+import { render, fireEvent } from '@testing-library/react'
 
 import App from './App'
 
 describe('App', () => {
   test('Renders without error', () => {
-    render(<App />)
+    const { container } = render(<App />)
+
+    fireEvent.click(container.querySelectorAll("button")[0])
+
+    expect(container.querySelector("h1").textContent).toEqual("1")
   })
 })
