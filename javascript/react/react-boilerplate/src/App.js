@@ -11,6 +11,7 @@ function App() {
       <h1>{count}</h1>
       <button onClick={() => setCount((count) => count + 1)}>+</button>
       <button onClick={() => setCount((count) => count - 1)}>-</button>
+      <img src="./logo.png" alt="logo"></img>
       {count > 10 ? (
         <React.Suspense fallback={null}>
           <Warning />

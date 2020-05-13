@@ -1,7 +1,7 @@
 const merge = require('webpack-merge')
 const baseConfig = require('./webpack.config.base')
 
-devHotConfig = merge(baseConfig, {
+const devHotConfig = merge(baseConfig, {
   mode: 'development',
   devServer: {
     port: 9000,

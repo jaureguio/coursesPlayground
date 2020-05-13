@@ -7,8 +7,12 @@ describe('App', () => {
   test('Renders without error', () => {
     const { container } = render(<App />)
 
-    fireEvent.click(container.querySelectorAll("button")[0])
+    fireEvent.click(container.querySelectorAll('button')[0])
 
-    expect(container.querySelector("h1").textContent).toEqual("1")
+    expect(container.querySelector('h1').textContent).toEqual('1')
   })
+})
+
+describe('true should be true', () => {
+  expect(true).toEqual(true)
 })

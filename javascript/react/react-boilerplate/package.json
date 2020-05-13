@@ -8,7 +8,13 @@
     "dev": "webpack-dev-server --config webpack.config.dev.js",
     "dev:hot": "npm run dev -- --hot --config webpack.config.dev.hot.js",
     "test": "jest",
-    "format": "pretty-quick"
+    "format": "pretty-quick",
+    "lint": "eslint ./"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "npm run format && npm run lint && npm run test"
+    }
   },
   "keywords": [],
   "author": "",
@@ -23,11 +29,15 @@
     "@testing-library/jest-dom": "^5.7.0",
     "@testing-library/react": "^10.0.4",
     "babel-core": "^7.0.0-bridge.0",
+    "babel-eslint": "^10.1.0",
     "babel-jest": "^26.0.1",
     "babel-loader": "^8.1.0",
     "babel-plugin-dynamic-import-node": "^2.3.3",
     "css-loader": "^3.5.3",
+    "eslint": "^7.0.0",
+    "eslint-plugin-react": "^7.19.0",
     "html-webpack-plugin": "^4.3.0",
+    "husky": "^4.2.5",
     "jest": "^26.0.1",
     "prettier": "^2.0.5",
     "pretty-quick": "^2.0.1",
@@ -40,6 +50,7 @@
   },
   "dependencies": {
     "@babel/polyfill": "^7.8.7",
+    "eslint-plugin-jsx-a11y": "^6.2.3",
     "prop-types": "^15.7.2",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
