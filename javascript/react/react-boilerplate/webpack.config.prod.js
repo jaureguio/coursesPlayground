@@ -2,7 +2,7 @@ const merge = require('webpack-merge')
 const baseConfig = require('./webpack.config.base')
 const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer')
 
-const prodConfig = merge(baseConfig, {
+module.exports = merge(baseConfig, {
   mode: 'production',
   plugins: [
     new BundleAnalyzerPlugin({
@@ -16,5 +16,3 @@ const prodConfig = merge(baseConfig, {
     'react-dom': 'ReactDOM',
   },
 })
-
-module.exports = prodConfig

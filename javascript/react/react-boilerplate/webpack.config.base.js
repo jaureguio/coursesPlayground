@@ -2,10 +2,15 @@ const path = require('path')
 const HtmlWebpackPlugin = require('html-webpack-plugin')
 
 module.exports = {
-  entry: './src',
+  entry: {
+    app: './src'
+  },
   output: {
     path: path.join(__dirname, 'dist'),
-    filename: 'app.bundle.js',
+    // [name].bundle.js will become app.bundle.js in this case, just as the 'app' entry name
+    filename: '[name].bundle.js',
+    // This allows to control the naming for lazily loaded modules (using dynamic imports)
+    chunkFilename: '[name].chunk.bundle.js'
   },
   module: {
     rules: [
