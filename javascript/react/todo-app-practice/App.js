@@ -1,87 +1,165 @@
-const { useState } = React
+const { useState } = React;
 
 const todoList = [
   {
     id: uuidv4(),
-    task: 'Learn React',
-    completed: true
+    task: "Learn React",
+    completed: true,
   },
   {
     id: uuidv4(),
-    task: 'Learn ML',
-    completed: false
+    task: "Learn ML",
+    completed: false,
   },
   {
     id: uuidv4(),
-    task: 'Learn Docker & Containers',
-    completed: false
+    task: "Learn Docker & Containers",
+    completed: false,
   },
   {
     id: uuidv4(),
-    task: 'Learn React Native',
-    completed: false
+    task: "Learn React Native",
+    completed: false,
   },
-]
+];
 
 function App() {
-  const [task, setTask] = useState('')
-  const [todos, setTodos] = useState(() => todoList)
-  const [filter, setFilter] = useState('all')
-  console.log('rendered')
+  const [task, setTask] = useState("");
+  const [edit, setEdit] = useState("");
+  const [editted, setEditted] = useState(null);
+  const [todos, setTodos] = useState(() => todoList);
+  const [filter, setFilter] = useState("all");
+  console.log("rendered");
 
-  const filteredTodos = todos.filter(t => {
-    if(filter === 'all') return true
-    if(filter === 'completed' && t.completed) return true
-    if(filter === 'incompleted' && !t.completed) return true
-    return false
-  })
+  const filteredTodos = todos.filter((t) => {
+    if (filter === "all") return true;
+    if (filter === "completed" && t.completed) return true;
+    if (filter === "incompleted" && !t.completed) return true;
+    return false;
+  });
 
   return (
-    <> 
+    <>
       <h1>THINGS TO LEARN NEXT:</h1>
-      <form onSubmit={handleSubmit}>
-        <input type="text" value={task} onChange={({target: {value}})=> setTask(value)} />
+      <form onSubmit={handleNew}>
+        <input
+          type="text"
+          value={task}
+          onChange={({ target: { value } }) => setTask(value)}
+        />
         <button type="submit">Add new task</button>
       </form>
-      <button name='all' onClick={handleFilterChange}>Show All</button>
-      <button name='completed' onClick={handleFilterChange}>Show Completed</button>
-      <button name='incompleted' onClick={handleFilterChange}>Show Incompleted</button>
-      <ul style={{listStyle: "none"}}>
-        {filteredTodos.map(todo =>(
-          <li key={todo.id} style={{textDecoration: todo.completed ? "line-through" : "none"}}>
-            <input
-              type="checkbox" 
-              id={todo.task} 
-              checked={todo.completed} 
-              onChange={() => handleChecked(todo)}
-            />
-            <span>{todo.task}</span>
+      <div style={{ marginTop: 10 }}>
+        <button name="all" onClick={handleFilterChange}>
+          Show All
+        </button>
+        <button name="completed" onClick={handleFilterChange}>
+          Show Completed
+        </button>
+        <button name="incompleted" onClick={handleFilterChange}>
+          Show Incompleted
+        </button>
+      </div>
+      <ul style={{ listStyle: "none" }}>
+        {filteredTodos.map((todo, idx) => (
+          <li
+            key={todo.id}
+            style={{ textDecoration: todo.completed ? "line-through" : "none" }}
+          >
+            {editted === todo.id ? (
+              <form onSubmit={(e) => handleEdit(e, todo)}>
+                <input
+                  type="text"
+                  id={todo.task}
+                  value={edit}
+                  onChange={(e) => setEdit(e.target.value)}
+                />
+                <button type="submit">Done</button>
+              </form>
+            ) : (
+              <>
+                <input
+                  type="checkbox"
+                  id={todo.task}
+                  checked={todo.completed}
+                  onChange={() => handleChecked(idx)}
+                />
+                <span>{todo.task}</span>
+                <button onClick={() => handleEditted(todo)}>Edit</button>
+              </>
+            )}
+            <button onClick={() => handleMove(idx, -1)}>Move up</button>
+            <button onClick={() => handleMove(idx, 1)}>Move down</button>
+            <button onClick={() => handleDelete(todo)}>Delete</button>
           </li>
-        ))}  
+        ))}
       </ul>
     </>
-  )
+  );
 
-  function handleSubmit(e) {
-    e.preventDefault()
-    setTodos(todos => [...todos, {
-      id: uuidv4(),
-      task,
-      completed: false
-    }])
-    setTask('')
+  function handleNew(e) {
+    e.preventDefault();
+    if (!task) return null;
+    setTodos((todos) => [
+      ...todos,
+      {
+        id: uuidv4(),
+        task,
+        completed: false,
+      },
+    ]);
+    setTask("");
   }
 
-  function handleChecked(todo) {
-    return setTodos(todos.map(t =>
-      t === todo ? { ...t, completed: !t.completed } : t
-    ))
+  function handleChecked(idx) {
+    const newTodos = [...todos];
+    const modifiedTodo = todos[idx];
+    modifiedTodo.completed = !modifiedTodo.completed;
+    newTodos[idx] = modifiedTodo;
+    setTodos(newTodos);
+  }
+
+  function handleEdit(e, todo) {
+    e.preventDefault();
+    if (!edit) {
+      handleDelete(todo);
+    } else {
+      setTodos((todos) =>
+        todos.map((t) => {
+          if (t === todo) {
+            return { ...t, task: edit };
+          }
+          return t;
+        })
+      );
+      setEditted(null);
+    }
+  }
+
+  function handleEditted(todo) {
+    setEditted(todo.id);
+    setEdit(todo.task);
+  }
+
+  function handleDelete(todo) {
+    setTodos((todos) => todos.filter((t) => t !== todo));
   }
 
   function handleFilterChange(e) {
-    return setFilter(e.target.name)
+    setFilter(e.target.name);
+  }
+
+  function handleMove(idx, move) {
+    if (idx + move >= todos.length || idx + move < 0) return null;
+    setTodos((todos) => {
+      const newTodos = [...todos];
+      [newTodos[idx], newTodos[idx + move]] = [
+        newTodos[idx + move],
+        newTodos[idx],
+      ];
+      return newTodos;
+    });
   }
 }
 
-export default App
-
+export default App;
