@@ -1,0 +1,49 @@
+:root {
+  --button-color: magenta;
+  --aux-color: lightblue;
+}
+
+html,
+body,
+* {
+  box-sizing: border-box;
+  font-family: Helvetica, Arial, sans-serif;
+}
+
+button {
+  background-color: var(--button-color);
+  border: 5px solid var(--aux-color);
+  color: white;
+  margin: 0 0.5em;
+  padding: 1em;
+  outline: none;
+}
+
+button:hover {
+    background-color: var(--aux-color);
+}
+button:active {
+    background-color: var(--aux-color);
+}
+
+.Counters {
+  display: flex;
+}
+
+.Counter {
+  border: 5px solid var(--aux-color);
+  font-weight: 700;
+  margin: 2em auto;
+  padding: 2em;
+  width: 400px;
+}
+
+.count {
+  font-size: 8em;
+  text-align: center;
+}
+
+.controls {
+  display: flex;
+  justify-content: center;
+}

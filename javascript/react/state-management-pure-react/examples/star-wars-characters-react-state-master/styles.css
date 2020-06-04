@@ -1,0 +1,176 @@
+:root {
+  --button-color: rgb(28, 209, 83);
+  --button-color-states: rgb(100, 109, 83);
+  --danger-color: #f0544f;
+  --danger-color-states: #f0549a;
+  --control-color: #c79528;
+  --font-color: #28283d;
+}
+
+html,
+body,
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+body,
+input {
+  color: var(--font-color);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+select {
+  border-radius: 0;
+  color: var(--font-color);
+  margin: 1em 0;
+  padding: 1em;
+  width: 100%;
+}
+
+option {
+  padding: 1em;
+}
+
+input {
+  background-color: white;
+  border: 1px solid white;
+  margin: 0.5em 0;
+  outline: none;
+  padding: 1em;
+  width: 100%;
+}
+
+input:focus {
+  background-color: white;
+}
+
+
+button,
+input[type='submit'] {
+  background-color: var(--button-color);
+  border: 1px solid var(--button-color);
+  margin: 0.5em 0;
+  outline: none;
+  padding: 1em;
+  width: 100%;
+}
+
+button:focus,
+input[type='submit']:focus {
+  background-color: var(--button-color-states);
+}
+
+button:hover,
+input[type='submit']:hover {
+  background-color: var(--button-color-states);
+}
+
+button:active,
+input[type='submit']:active {
+  background-color: var(--button-color-states);
+}
+
+button:disabled,
+input[type='submit']:disabled {
+  background-color: var(--button-color-states);
+  border-color: var(--button-color-states);
+  color: var(--button-color-states);
+}
+
+button.danger,
+input[type='submit'].danger {
+  background-color: var(--danger-color-states);
+  border: 1px solid var(--danger-color-states);
+  margin: 0.5em 0;
+  outline: none;
+  padding: 1em;
+  width: 100%;
+}
+
+button.danger:focus,
+input[type='submit'].danger:focus {
+  background-color: var(--danger-color-states);
+}
+
+button.danger:hover,
+input[type='submit'].danger:hover {
+  background-color: var(--danger-color-states);
+}
+
+button.danger:active,
+input[type='submit'].danger:active {
+  background-color: var(--danger-color-states);
+}
+
+button.danger:disabled,
+input[type='submit'].danger:disabled {
+  background-color: var(--danger-color-states);
+  border-color: var(--danger-color-states);
+  color: var(--danger-color-states);
+}
+
+.Application {
+  margin: 0.5em auto;
+  max-width: 800px;
+}
+
+.Application h1 {
+  box-shadow: 1px 2px 3px rgba(0, 0, 0, 0.2);
+  padding: 1em;
+  border: 1px solid var(--control-color);
+  text-align: center;
+  color: var(--font-color);
+}
+
+.Application main {
+  display: flex;
+}
+
+.sidebar {
+  width: 100%;
+  flex: 1;
+}
+
+.CharacterView {
+  padding: 0 2em;
+  flex: 3;
+  width: 100%;
+}
+
+.CharacterListItem {
+  padding: 0.5em;
+}
+
+.CharacterListItemLink {
+  color: black;
+  text-decoration: none;
+  border: 1px solid var(--button-color);
+  display: block;
+  padding: 1em;
+}
+
+.CharacterListItemLink.active {
+    background-color: var(--button-color);
+}
+
+.CharacterDetails {
+  list-style: none;
+  padding: 0;
+}
+
+.CharacterDetails li {
+    padding: 1em;
+}
