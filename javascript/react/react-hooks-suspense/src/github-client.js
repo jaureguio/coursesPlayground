@@ -1,14 +1,14 @@
 /* @jsx jsx */
 import {jsx} from '@emotion/core'
 
-import React, { useState, useEffect } from 'react'
+import React, {useState, useEffect} from 'react'
 import {navigate, createHistory} from '@reach/router'
 import netlify from 'netlify-auth-providers'
 import {GraphQLClient} from 'graphql-request'
 import {PrimaryButton} from './shared/pattern'
 
 const GitHubClientContext = React.createContext()
-const { Provider, Consumer } = GitHubClientContext
+const {Provider, Consumer} = GitHubClientContext
 
 async function authWithGitHub() {
   return new Promise((resolve, reject) => {
@@ -17,7 +17,7 @@ async function authWithGitHub() {
     })
     authenticator.authenticate(
       {provider: 'github', scope: 'public_repo,read:org,read:user'},
-      function(err, data) {
+      function (err, data) {
         if (err) {
           reject(err)
         }
@@ -49,37 +49,37 @@ function GitHubClientProvider(props) {
         navigate('/')
       }
     })
-    return function cleanup() { 
-      unsubscribeHistory() 
+    return function cleanup() {
+      unsubscribeHistory()
     }
   }, [])
 
- function getClient(token) {
-   const headers = { Authorization: `bearer ${token}`}
-   const client = new GraphQLClient('https://api.github.com/graphql', {
-     headers,
-   })
-   return Object.assign(client, {
-     login,
-     logout
-   })
- }
+  function getClient(token) {
+    const headers = {Authorization: `bearer ${token}`}
+    const client = new GraphQLClient('https://api.github.com/graphql', {
+      headers,
+    })
+    return Object.assign(client, {
+      login,
+      logout,
+    })
+  }
 
- function logout() {
-   window.localStorage.removeItem('github-token')
-   setError(null)
-   setClient(null)
-   navigate('/')
- }
+  function logout() {
+    window.localStorage.removeItem('github-token')
+    setError(null)
+    setClient(null)
+    navigate('/')
+  }
 
- async function login() {
-   const data = await authWithGitHub().catch(error => {
-     console.log('Oh no', error)
-     setError(error)
-   })
-   window.localStorage.setItem('github-token', data.token)
-   setClient(getClient(data.token))
- }
+  async function login() {
+    const data = await authWithGitHub().catch((error) => {
+      console.log('Oh no', error)
+      setError(error)
+    })
+    window.localStorage.setItem('github-token', data.token)
+    setClient(getClient(data.token))
+  }
 
   return client ? (
     <Provider value={client}>{props.children}</Provider>
@@ -97,12 +97,10 @@ function GitHubClientProvider(props) {
           <pre>{JSON.stringify(error, null, 2)}</pre>
         </div>
       ) : (
-          <div>
-            <PrimaryButton onClick={login}>
-              Login with GitHub
-            </PrimaryButton>
-          </div>
-        )}
+        <div>
+          <PrimaryButton onClick={login}>Login with GitHub</PrimaryButton>
+        </div>
+      )}
     </div>
   )
 }
