@@ -1,0 +1,123 @@
+In this lesson, we'll discuss mongod, the daemon process for MongoDB.
+
+You'll learn what mongod is, how it works at a high level, and how to interact with it using a database client.
+
+We'll also go over the default configuration for mongod.
+
+Before understanding what mongod is, we need to define the term daemon.
+
+A daemon is a program or process that's meant to be run but not interacted with directly.
+
+Daemons usually have a D appended to their name, which gives us the name mongod.
+
+mongod is the main daemon process for MongoDB.
+
+It is the core server of the database, handling connections, requests, and most importantly, persisting your data.
+
+mongod contains all of the configuration options we can use to make our database secure, distributed, and consistent.
+
+Our MongoDB deployment may consist of more than one server.
+
+For example, our data may be distributed in a replica set or across a sharded cluster.
+
+In this case, we run a separate mongod process for each server in our cluster.
+
+When we launch mongod, we're essentially starting up a new database.
+
+But we don't interact with the mongod process directly.
+
+Instead, we use a database client that is programmed to communicate with mongod.
+
+We issue database commands, like document inserts or updates, to the client, and the client takes care of communicating with mongod to execute those commands.
+
+If our deployment has multiple servers, we can configure our client to communicate with each of these mongod processes as needed.
+
+So we don't need to figure out which server to connect to ourselves.
+
+Now that we have an idea of what mongod is used for, let's talk about how to use it.
+
+The easiest way to start up a mongod process is to run the command mongod in the terminal.
+
+Notice that we no longer have a command prompt in our terminal.
+
+If we try to type a command, such as ls, we'll just get a new line.
+
+If we want to continue using the terminal, we need to open a new window.
+
+As we'll see in later lessons, we can configure mongod by providing a configuration file or specifying flags.
+
+But there are some default values to be aware of when launching mongod without any options.
+
+The port mongod listens on will default to 27017.
+
+Clients that want to access mongod should specify the same port.
+
+The default dbpath is /data/db.
+
+This is where the data files representing your databases, collections, and indexes are stored so that your data persists after mongod stops running.
+
+The dbpath also stores journaling information so that your data remains consistent in the case of an unexpected crash.
+
+mongod binds to localhost by default.
+
+This means that the only database clients that can connect with mongod are ones local to the machine where mongod is running.
+
+We'll learn in later lessons how to bind to other IP addresses and hosts to allow remote clients to connect.
+
+Authentication is turned off by default.
+
+This means that unless we enable off, database clients are not required to authenticate before accessing the database.
+
+Understanding the default values should make it easier to read the mongod output.
+
+On the first line, we can see the dbpath and the port.
+
+A little further down we also have two warnings, that access control is not enabled-- that is, we have not turned on authentication-- and that mongod is only bound to localhost.
+
+As we said before, we don't communicate with mongod directly when we issue commands to our database.
+
+Instead, we issue commands through a database client.
+
+In this lesson, we'll use the Mongo Shell as our database client to communicate with mongod.
+
+And we'll issue our commands with the Mongo query language.
+
+The Mongo Shell allows us to interact with MongoDB directly in the terminal.
+
+By default, the Mongo Shell will connect to port 27017, which is the port our mongod process is currently listening on.
+
+To get the Mongo Shell up and running, we just need to type the command mongo.
+
+To verify the Mongo Shell is connected to our mongod process, we can check the output in the mongod window.
+
+The output shows that one connection is now open, and that the application is the MongoDB shell.
+
+Once the Mongo Shell is connected to mongod, we can issue database commands like insert and find.
+
+Let's try an example.
+
+Say we want to add an employees collection to our database.
+
+All we need to do is type in the command db.createCollection and pass in the name of the collection we want to create.
+
+The shell outputs an OK message to indicate that we successfully created a new collection.
+
+We can also see the results of the createCollection command in the mongod output.
+
+When we're done, we can use the shell to close our mongod connection with the following command-- use admin db.shutdownServer and exit.
+
+Again, let's check the mongod window to verify that mongod is no longer running.
+
+mongod outputs that it received the shell command and cleaned up after itself by closing sockets and shutting down.
+
+Of course, the Mongo Shell isn't the only way we can connect to mongod.
+
+MongoDB provides other database clients such as MongoDB Compass, which is a graphical user interface for MongoDB, and drivers in several different languages, which provide APIs to connect to mongod in your applications.
+
+Let's recap what we learned in this lesson.
+
+We defined mongod as the main daemon process for MongoDB.
+
+We talked about some default configurations when we run mongod.
+
+And we learned about database clients and used the Mongo Shell to connect with mongod.
