@@ -488,7 +488,7 @@ MongoDB installations comes with a several additional tools by default. These ca
 mongodump --port 30000 --db applicationData --collection products
 ```
 
-  - The command is going to create a folder called 'dump' with dump files (BSON and JSON formats) related to the database and collection specified. The file with JSON format has a list of the indexes, which right now is just the one on "_id" that comes by default, and then the namespace of the collection that we dumped. The BSON file is the actual data from the collection, but it is not very readable.
+- The command is going to create a folder called 'dump' with dump files (BSON and JSON formats) related to the database and collection specified. The file with JSON format has a list of the indexes, which right now is just the one on "\_id" that comes by default, and then the namespace of the collection that we dumped. The BSON file is the actual data from the collection, but it is not very readable.
 
 - mongorestore
   - This tool achieves the inverse of mongodump. It takes a BSON dump file and creates a MongoDB collection from it. We can use the `--drop` flag to drop the current collection, and then replace it with what's in the dump file. All we need to pass is the 'dump' directory (just as the one created when running `mongodump`) because that had the metadata in JSON format, which is going to indicate any indexes and namespaces to restore.
@@ -507,7 +507,7 @@ mongoexport --port 30000 --db applicationData --collection products
 mongoexport --port 30000 --db applicationData --collection products -o products.json
 ```
 
-  - To use mongoimport we can run the commands as follows:
+- To use mongoimport we can run the commands as follows:
 
 ```powershell
 mongoimport --help
@@ -520,3 +520,600 @@ _It is important to note that we must provide authentication when the mongod pro
 
 ### What is Replication?
 
+Replication is the concept of maintaining multiple copies of our data. This is a really important concept in MongoDB as well as in any other database system. The main reason why replication is necessary is because we can never assume that all of our servers will always be available. Whether we gave to perform maintenance on a data center or a disaaster wipes out our data entirely, our servers will experience downtime at some point.
+
+- The point of replication is to make sure that in the event our server goes down, we can still access our data. This concept is called _availability_.
+- A database that does not use replication only has a single database server, and we refer to these as standalone nodes. In a standalone setup, databases can service reads and writes only while that single node is up and running. But if the node goes down, we lose all access to that data; _reads and writes won't reach the server_.
+
+In a replicated solution we have a couple extra nodes on hand, holding extra copies of our data. The group of nodes that each have copies of the same data is called a "Replica set" in MongoDB. In a "Replica Set" all data is handled by default in one of the nodes (the primary node), and it's up to the remaining nodes (secondary nodes) in the set to sync up with it and replicate any new data that's been written through an asynchronous mechanism.
+
+- If our application is using the database, and the primary node goes down, one of the secondary nodes can take its place as primary in a process known as "failover".
+- The nodes decide specifically whuch secondary will become the primary through an election. The secondary nodes actually vote for one another to decide which secondary will become the primary.
+- In a durable replica set, failover can take place quickly, so that no data is lost and the applications using the data will continue communicating with the replica set as if nothing had ever happened. Once the failed node comes back up, and catch up and sync on the lastest copy of the data, it will rejoin the replica set automatically.
+
+Availability and redundancy of data are a typical properties of a durable database solution.
+
+#### Data Replication
+
+Data replication can take one of two forms.
+
+- Binary replication: it works by examining the exact bytes that changed in the data files and recording those changes in a binary log. The secondary nodes then receive a copy of the binary log and write the specified data that changed to the exact byte locations that are specified on the binary log. Replicating data this way is pretty easy on the secondaries because the get really specific instructions on what bytes to change and what to change them to. In fact, secondaries are not even aware of the statements that they're replicating. No context about the data is required to replicate a write.
+
+  - The downside of using binary replication is that we assume that the operating system is consisten across the entire replica set. For example, if our primary node is running Windows, the secondaries can't use the same binary log if the run Linux. And if they do have the same OS, all machines must have the same instruction set (either Windows x86 or x64 and the same version of the database server running on each machine).
+  - In other words, using binary replication requires a very strict consistency across every machine running in the replica set.
+
+- Statement-base replication: this approach works regardless of the OS or instruction set of the nodes in the replica set. After a write is completed on the primary node, the write statement itself is stored in the oplog (operation log), and the secondaries then sync their oplogs with the primary;s oplog and replay any new statements on their own data.
+
+  - MongoDB uses statement-based replication, but the right commands actually undergo a small transformation before they're stored in the oplog. The goal of the transformation is to make sure that the statements stored in the oplog can be applied an indefinite number of times while still resulting in the same data state. This is, give the operations the property of _idempotency_. When statements are replicated this way, we can replay the oplog as many times as we want without worrying about data consistency.
+  - > For example, let's say that we had a statement that incremented the paid views on a website by 1. The primary already applied this statement to its data, so it knows that after incrementing page use by 1, the total page views went from 1,000 to 1,001. It would actually transform this statement into a statement that sets page views to 1,001 and then store that statement in the oplog.
+
+##### Recap of Both Approaches
+
+| Binary Replication                                                                                                                                                                                     | Statement-based Replication                                                    |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ |
+| Requires less data in the binary log, which means less data is passed from primaries to secondaries                                                                                                    | Writes actual MongoDB commands into the oplog, so the oplog is a little bigger |
+| It can be a lot faster because less work is required by the secondaries when actually replicating from the binary log. The data that needs to be changed is written directly into the log in that case | Statements are not bound to a specific OS or any machine-level dependency      |
+
+### MongoDB Replica Set
+
+Replica Sets are groups of MongoDs that share copies of the same information between them. Replica set members can have one of two different main roles:
+
+- Primary node, where all reads and writes are served by this node.
+- Secondary node, where the reponsibility of this node is to replicate all of the information and then serve as a high availability node in case of failure of the primary.
+
+![primary-secondary-nodes](primary-secondary-nodes.jpg)
+
+The secondaries will get the data from the primary through an asynchronous replication mechanism. Every time an application writes some data to the replica set, that write is handled by the primary node, and then data gets replicated to the secondary nodes. Now this replication mechanism is based out of a protocol that manages the way that the secondaries should read data from the primary. In MongoDB this asynchronous replication protocol might have different versions, PV1 and PV0.
+
+- The different versions of the replication protocol will vary slightly on the way durability and availability will be forced throughout the set. Currently, PV1 is the default version. This protocol is based on the _RAFT protocol_. [RAFT protocol example](http://thesecretlivesofdata.com/raft/).
+- At the heart of this replication mechanism there's our operations log, or oplog for short. The oplog is a segment based lock that keeps track of all write operations acknowledged by th replica sets. Every time a write is succesfully applied to the primary node, it will get recorded in the oplog in its idempotent form. An idempotent operation can be applied multiple times. The end result of that operation will always output the same emd result.
+
+Apart from a primary or secondary role, a replica set member can also be configured as an arbiter. An arbiter is a member that holds no data. Its mere existance is to serve as a tiebreaker between secondaries in an election. And obviously if it has no data, it can never become primary.
+
+Replica set a failure resilient. That means that they have a failover mechanism that requires a majority of nodes in a replica set to be available for a primary to be elected.
+
+- Let's assume that we lose access to oyr primary. If we don't have a primary we will not be able to write to the database. We need to determine which node from the remaining nodes of the set could become the new primary. That is throug an election, which is embedded on the details of the protocol version. The details of the election (how a primary gets elected or why some particular node becomes primary instead of another) will be related to the protocol version our system has. Important thing to note is that we should always have at least an odd number of nodes in our replica set. In case of even number of nodes, we have to make sure of the majority is consistently available.
+  - Let's consider a case where we have gour members in a replica set configuration. The topology offers exactly the same number of failures as a three node replica sets. We can only afford to lose one member. In case of losing two of them, we will have no majority available out of the sets. Why is this possible? The majority of 4 is 3, therefore, the two remaining nodes will not be able to be electing a primary in-between them. Having that extra node will not provide extra availability of the service, just another redundant copy of our data, which is good, but not necessarily for availability reasons.
+- The list of the replica set members and their configuration options defines the replica set topology. Any topology change will trigger an election. Adding members to the set, failing members, or changing any of the replica set configuration aspects will be perceived as it's a topology change. The topology of a replica set is defined in the replica set configuration.
+- The replica set configuration is defined in one of the nodes and then shared between all members through the replication mechanism.
+
+Note that replica sets can go up to 50 members, and this might be useful, especially for geographical distribution of our data where we want copies of it closer to our users and applications, or just multiple locations for redundancy. However, only a maximum of seven of those members can be voting members. More than seven members may cause election rounds to take too much time, with little to none benefit for availability and consistency purposes. So between those seven nodes, one of them will become the primary and the remaining ones will be electable as primaries if in case its policy changes or in case a new election gets triggered.
+
+> Now if for some reason we can't or don't want to have a data bearing node, but still be able to failover between nodes, we can add a replica set member as an arbiter. That said, arbiters do cause significant consistency issues in distributed data systems. So we advise you use them with care. In my personal view, the usage of arbiters is a very sensitive and potentially harmful option in many deployments.
+
+Within secondary nodes, these can also be set to have specific or special properties defined. We can define hidden nodes, for example. The purpose of a hidden node is to provide specific read-only workloads, or have copies over our data which are hidden from the application. Hidden nodes can also be set with a delay in their replication process. We call these "delayed nodes". The purpose of having delayed nodes is to allow resilience to application level corruption, without relying on _cold backup files(?)_ to recover from such an event.
+
+- > If we have a node delayed, let's say one hour, and if your DBA accidentally drops a collection, we have one hour to recover all the data from the delayed node without needing to go back to back up file to recover to whatever the time that backup was created. Enabling us to have hot backups.
+
+#### Recap of MongoDB Replica Sets
+
+- Replicat sets are groups of MongoD processes that share the same data between all the members of the set.
+- They provide a high availability and failover mechanism to our application, making the service of data possible in case of failure. The failover is supported by a majority of nodes that elect between them who should be the new primary node at each point in time.
+- Replica sets are a dynamic system, which means that members may have different roles at different times, and can be set to address specific functional purposse like addressing read on workloads, or set to be delayed in time to allow _hot back-ups(?)_.
+
+### Setting Up a Replica Set
+
+We're going to start by independently lauching three mongod processes and they won't actually be able to communicate with each other until we connect them, at which point they'll be able to actually replicate data for us. The configuration file for the first standalone nodes, called node 1, is as follows:
+
+```yaml
+storage:
+  dbPath: /var/mongodb/db/node1
+net:
+  bindIp: 192.168.103.100,localhost
+  port: 27011
+security:
+  authorization: enabled
+  keyFile: /var/mongodb/pki/m103-keyfile
+systemLog:
+  destination: file
+  path: /var/mongodb/db/node1/mongod.log
+  logAppend: true
+processManagement:
+  fork: true
+replication:
+  replSetName: m103-example
+```
+
+- Security is enabled through key-file authentication on the cluster, which mandates that all members of the replica set have to authenticate to each other (remember the mention of some sort of "handshake" mechanism in the previous lectures/course) using a key file that we have to create. This is in addition to the client authentication that we enabled in the previous line (`authorization: enable`) -- actually, enabling key-file authentication implicitly enables the client authentication enabled in the previous line.
+  - We create this key file using OpenSSL, specifying, amongst others, the proper permissions to read and write to the directory which is going to contain the keyfile (example for unix systems):
+
+```shell
+sudo mkdir -p /var/mongodb/pki/
+sudo chown vagrant:vagrant /var/mongodb/pki/
+openssl rand -base64 741 > /var/mongodb/pki/m103-keyfile
+chmod 400 /var/mongodb/pki/m103-keyfile
+```
+
+-The last line (`replication: replSetName: m103-example`). All it does is specify the name of the replica set that this node is going to be a part of.
+
+All we need to do after creating the appropiate config files for the nodes of the replica set is to run a mongod process for each with the given config file -- the three things that we need to change in each file are the db path, the port number and the log path.
+
+So at this point we started three mongod processes that will eventually make up a replica set. But right now, they can't replicate data. And in fact, they have no knowledge that other nodes are out there. They're blind to the world around them. We need to enable communication between the nodes so they can stay in sync. In order to properly set communication between the nodes in the replica set:
+
+- Connect to one of the nodes, specifically the one we want to become the primary. Connected to it we need to run the `rs.initiate()` command in order to initiate the replica set. This command has to be run in just one of the replica set node members; from this node we are going to add the other nodes of the replica set.
+- Because authentication is enabled, we first need to authenticate against the primary process before adding nodes the replica set. If no user is created, we can do so by the localhost exception privileges.
+
+```javascript
+use admin
+db.createUser({
+  user: "m103-admin",
+  pwd: "m103-pass",
+  roles: [
+    {role: "root", db: "admin"}
+  ]
+})
+```
+
+- After creating the new user (with root role), we should reconnect to the primary node providing the username, password, authentication database, and also the replica set and host name. This will tell the mongo shell to connect directly to the replica set, instead of just this one primary node that we specify. What the shell is going to do is to use this node to discover what the current primary is of the replica set and then connect to that node instead.
+
+```powershell
+mongo --host "m103-example/192.168.103.100:27011" -u "m103-admin"
+-p "m103-pass" --authenticationDatabase "admin"
+```
+
+- Once connected, we can run the `rs.status()` command, which is a useful way to get a status report on our replica set. It gives us the name of the set, how long the intervals are between heartbeats; by de fault, it's 2000 milliseconds, which means the nodes are talking to each other every two seconds. Additionally, a list of members for the replica set is provided. At this moment, will show just one member, which is the one that we're connected to, the current primary.
+- To add nodes to our replica set we use the `rs.add()` command, and all we have to specify here is the host name, which is just the host name of the _vagrant box(?)_ and the port that that node is running on.
+
+```javascript
+rs.add("m103:27012"); // m103 did not work when running the command when connecting to the replica set (through node 1) specifying "localhost/..." as the host. "localhost:<port>" works instead.
+rs.add("m103:27013");
+```
+
+- Running `rs.isMaster()` provides additional information on the current state of the replica set seen from the current process (node). The replica set should now have three nodes in it. We can verify that this current node is the primary node and is running in port 27011.
+- We can force an election so that a different node becomes primary. Using `rs.stepDown()` from the primary node process will achieve this purpose. This stepdown command is what we use to safely step down the current primary to a secondary and force an election to take place. The mongo shell will output an error message while is trying to reconnect to the new primary elected. As soon as one is elected, the shell will connect us to it.
+- To verify the new primary node elected, we can run once again the `rs.isMaster()` command.
+
+### Replication Configuration Document
+
+The replica set configuration document is a simple BSON document that we manage using a JSON representation where the configuraion of our replica sets is defined and is shared across all the nodes that are configured in the sets. _This JSON representation/document can be retrieved using the `rs.config()` command_. We can Manually set changes to this document to configure a replica set according with the expected topology and overall replication options. Although we can do this simply editing such document using the MongoDB shell, we can also use a set of shell helpers like `rs.add()`, `rs.initiate()`, `rs.remove()` and `rs.reconfig`.
+
+![replication-conf-document](replication-conf.jpg)
+
+The following are a description of the basic and fundamental configuration options at our disposal:
+
+- `_id`
+
+  - This field is set with the name of the replica set. This is a string value that matches the server defined replica set. Whenever we start our mongod and we provide a replica set name (through configuration file or `--replSet` flag) to our MongoDB, the same value must match the "\_id" fiel of our replica set configuration document. In case we have different values from the configuration "\_id" and the defined replica set name, we end up with an error message. We get an incorrect replica set configuration, stating that we are attempting to initiate the replica set with a different name from which it has been set as `--replSet` or in the config file. This is a safeguard against incorrect configurations or incorrect adding the server to the incorrect replicat sets.
+
+- `version`
+
+  - It is just an integer that gets incremented every time the current configuration of our replica set changes. If, for example, we add a node to our replica set and if our version used to be number 1, we increment the value. Every time we changed a topology, changed a replica set configuration at all or do something like changing the number of votes of a given host, that will automatically increment the version number.
+
+- `members`
+
+  - Members is where the topology of our replica set is defined. Each element of the members array is a sub-document that contains the replica set node members. Each has a host comprise of the host name and port. Then we have a set of flags that determine the role of the nodes within the replica set:
+
+    - `_id` is a unique identifier of each element in the array. It's a simple integer field that is set once we had a member to the replica set. Once set, this value cannot be changed.
+    - `arbiterOnly` is self-explanatory. This means tha the node will not be holding any data, and its contributions to the set is to ensure quorum in elections.
+    - `hidden` is another flag that sets the node in the hidden role. A hidden node is not visible to the application, which means that every time we emit something like an `rs.isMaster()` command, this node will not be listed. Hidden nodes are useful for situations where we want a particular node to support specific operations. They are not related with the operational nature of our application, for example, having a node that handles all the reporting or _BI(?)_ reads.
+      - Both the previous flags are set to `false` by default.
+    - `priority` is an integer value that allows us to set a hierarchy within the replica set. We can set priorities between 0 a 1000. Members with higher `priority` tend to be elected as primary more often. A change in priority of a node will trigger an election because it will be perceived as a topology change. Setting `priority` to 0 effectively excludes that member from ever becoming a primary. In case we are setting a member to be `arbiterOnly`, that implies that the `priority` needs to be set to 0. The same would apply for `hidden`. The `priority` here also needs to become 0. A hidden node can never become a primary because it will not be seen by the application. Failing to do that will result in an error where a new replica set configuration is incompatible. `priority` must be 0 when `hidden` equals true.
+    - `slaveDelay` is an integer value that determines a replication delay interval in seconds. This default is 0. This option will enable delayed nodes. These delayed members maintain a copy of data reflecting a state in some point in the past, applying that delay in seconds. For example, if we have our `slaveDelay` option to 3600 seconds, which means 1 hour, that will mean that such member will be replicating data from the other nodes in the sets that occurred 1 hour ago. By setting this `slaveDelay` option, implies that your node will be hidden, and the priority will be set to 0.
+
+There is a lot more that we can configure within the replica set configuration documents. Fields like `settings` where we can define several different replication protocol attributes or things like `protocolVersion` and `configsvr` that will be seen later in this course. But the actual uses of these options for the basic administration course are out of scope.
+
+#### Recap on Replication Configuration Document
+
+- Replication configuration document is used to configure our replica sets. This is where the properties of our replica sets are defined, and the document is shared across all members of the set.
+- The `members` field is where a bunch of our basic configuration is goint to be determined-- which nodes are part of the set, what roles do they have, and what kind of topology we want to define is set on this field.
+- There is a vast amount other configuration options that either deal with internal replication mechanisms or overall configurations of the sets.
+
+### Replication Commands
+
+We've probable noticed that there are a lot of different ways to check the status of a replica set because each node emits a lot of information. Each replication command gives a different subset of this information.
+
+- `rs.status()` is used to report on the general health of each node in the set. The data it gets is from the heartbeat sent in-between nodes in the set. Because it relies on heartbeats for this data, it may actually be a few seconds out of date. This command gives us the most information for each specific node.
+
+  - `members` field shows us information on every member added into the replica set.
+    - We can get the state of the node, `stateStr` (primary, secondary, or so on).
+    - We have the `uptime`, which is the number of seconds this node has been running for.
+    - We also have the `optime`, which is the last time this node applied an operation from its oplog.
+    - We know that it was run from this because of the `self` flag is true when it is the case.
+    - There are heartbeats stats for each node as well but not for the node that we ran this command on. That's because the heartbeat stats are all relative to where `rs.status()` was run. We can scroll down to one of the other nodes and see that we have some heartbeats stats down here. Because we know that `lastHeartbeat` refers to the last time this node succesfully received a heartbeat from the primary. conversely, `lastHeartRecv` refers to the last time the primary succesfully received a heartbeat from this node.
+  - `heartbeatIntervalMillis` refers to the actual frequency of heartbeats of the set. It means that the nodes are talking to each other with the pointed frequency in milliseconds.
+
+- `rs.isMaster()` describes the role of the node where we ran this command from. And it also gives us some information about the replica set itself. The output is a lot easier to read than `rs.status` just because its output is a lot shorter.
+
+  - `hosts` provides a list with the members in the replica set.
+  - `ismaster` and `secondary` help us determine the role of the current node in the replica set.
+  - `primary` gives us the name of the primary node in the set regardless of where we ran this command from.
+  - `me` refers to the name of the current node.
+
+- `rs.serverStatus()` gives us a lot of information about the MongoD process, but we're just going to look at the section called `repl` (through `db.serverStatus()['repl']`). The output of it is going to be very similar to the output of `rs.isMaster`, with the exception of one field:
+
+  - `rbid` is not included in `rs.isMaster` and all this does is count the number of rollbacks that have ocurred on this node.
+
+- `rs.printReplicationInfo()` this command only has data about the oplog and specifically only the oplog for the node we're currently connected to. It gives us exact time stamps for the first and last events that occurred in the oplog for that node.
+
+  - It offers a quick report on the current length of the oplog in time and in megabytes. Remember that the earliest event in the oplog is subject to change because the oplog is a capped collection (it has a limited size), and it's periodically flush to make room for new data.
+
+### Local DB
+
+The minute we start and connect to our MongoD process, we can see two different namespaces or databases:
+
+- We have "admin", which comprises all the Administration Data and where most of our administration commands like `db.shutdownServer()`, for example, needs to be or will be executed.
+- We also have "local". In an standalone instance process, the "local" database has only one collection, the "startup_log". It will only hold the starting log of this particular node.
+
+Connecting to a replica set will produce more collections to be returned whe querying the "local" db. Most of these collections, like "startup_log", "replset.election", "replset.minvalid", and so on, are collections maintained internally by the server. They don't really vary that much, and the information they hold are simple configuration data. Where things get really interesting is with the "oplog.rs" collection.
+
+- "oplog.rs" is the central point of our replication mechanism. This is the oplog collection that will keep track of all statements being replicated in our replica set. Every single piece of information and operations that need to be replicated will be logged in this collection. There are a few things about the "oplog.rs" collection that we should know about.
+
+  - It is a capped collection, which means that the size of this collection is limited to a specific size. If we collect the stats of our "oplog.rs" collection into a variable, as `let stats = db.oplog.rs.stats()`, there's a flag called `.capped` that will tell us that this collection is indeed capped. We also can get sizing information (current and max size) from the "oplog.rs" collection with the flags `.size` and `.maxSize`.
+  - To see the size into megabyte units, we need to ask for the stats object passing `1024x1024` as an argument, as follows `let stats = db.oplog.rs.stats(1024x1024)`.
+  - By default, the oplog.rs collection will take 5% of our free disk. \_The size of our oplog will determine our replication window-- the amount of time that it will take to in our oplog. We can also see some of that information from the `rs.printReplicationInfo()` command:
+
+    - We are going to get the configured size of the oplog.
+    - The log length from start to end, points represented by the oplog first and last event time registered.
+
+After initiating our node and addinf the node to the replica set, the oplog.rs collection is created. By default, as i mentioned before, we take 5% of the available disk. However, this value can also be set by configuring it through the oplog size in megabytes under the replication section of our configuration file.
+
+As operations get logged into the oplog, like inserts or deletes or create collection kind of operations, the oplogs.rs collection starts to accumulate the operations and statements, until it reaches the oplog size limit. Once that happens, the first operations in our oplog start to be overwritten with newer operations. The time it takes to fill in fully our oplog and start rewriting the early statements determines the replication window. The replication window is important aspect to monitor because will impact how much time the replica set can afford a node to be down without requiring any human intervention to auto recover.
+
+> Every node in our replica set has its own oplog. As writes and operations gets to the primary node, these are captured in the oplog. And then the secondary nodes replicate that data and apply it on their own oplog. Now if for some reason one of the nodes gets disconnected, either because they're going some maintenance, or there's some sort of network issues, or any server downtime of any kind, and the server keeps on working, the replica set keeps on accumulating new writes-- for the server to be able to catch up with the remaining nodes. Basically what will happen is that a recovering node will check for its last oplog entry and try to find it in one of the available nodes. Once he finds it, he will just simply re-apply all operations since that point and catch up with the remaining nodes of the sets. However, if it is not able to find the same common operation in the remaining nodes' oplog because of the oplog already rotated and no sync source point as the last operation, the node will not be able to automatically recover and sync with the rest of the set, being placed in recovery mode.
+
+![oplog-recoverymode-syncing](oplog-size.jpg)
+
+Now, not all nodes need to be the same. For example, sync sources might have different oplog sizes. However, _if our oplog size is larger and able to accommodate more changes in the system, we can afford our nodes to be down for longer and still be able to reconnect once they're being brought back up again_. Therefore, the size of our oplog.rs collection is an important aspect to keep in mind. The replication window measured in hours will be proportional to the load of your system. You should keep an eye on that. The other good thing is that our oplog.rs size can be changed. And we have a fair amount of good documentation telling you how to do that as a administration task.
+
+#### Recap on Local DB
+
+- Local database holds very important information and should not be messed up with. Changing the data in your oplog or any of the configuration collections will impact the settings in the replication mechanism.
+- The oplog.rs is central to our replication mechanism. Everything that needs to be replicated will be stored and logged in the oplog in an idempotent way.
+- The size of our oplog will impact the replication window and should be closely monitored.
+- Any data written to local database that is not written to oplog.rs or changing any of the system configuration collections will stay there and will not be replicated.
+- _The local database will not be replicated. Any data written to this database will not be replicated across the different nodes of the set_.
+
+### Reconfiguring a Running Replica Set
+
+We make changes to a running replica set. Suppose we want to add 2 more nodes to the replica set, one of which is desired to be an arbiter. To do this, we need to launch two (almost identical) processes to host these new nodes. Both configuration files are shown next:
+
+- node4.conf:
+
+```yaml
+storage:
+  dbPath: /var/mongodb/db/node4
+net:
+  bindIp: 192.168.103.100,localhost
+  port: 27014
+systemLog:
+  destination: file
+  path: /var/mongodb/db/node4/mongod.log
+  logAppend: true
+processManagement:
+  fork: true
+replication:
+  replSetName: m103-example
+```
+
+- arbiter.conf:
+
+```yaml
+storage:
+  dbPath: /var/mongodb/db/arbiter
+net:
+  bindIp: 192.168.103.100,localhost
+  port: 28000
+systemLog:
+  destination: file
+  path: /var/mongodb/db/arbiter/mongod.log
+  logAppend: true
+processManagement:
+  fork: true
+replication:
+  replSetName: m103-example
+```
+
+Starting up mongod processes for both nodes:
+
+```powershell
+mongod -f node4.conf
+mongod -f arbiter.conf
+```
+
+From the Mongo shell of the replica set, adding the new secondary and the new arbiter:
+
+```javascript
+rs.add("m103:27014"); // check the name of the host for the replica set and replace "m103" if needed
+rs.addArb("m103:28000");
+```
+
+Running `rs.isMaster()` will reveal the new topology of the replica set, showing the addition of the secondary and the arbiter.
+
+- We can remove a node/member using the `rs.remove(<nodeName>)` command. For example, to remove the arbiter we should type: `rs.remove("m103:28000")`
+- To change some attributes (such as votes, hidden and priority) from a given member in the replica set, we can obtain a copy of the current replica set config and modify the member. Then, we can reconfigure the replica set with the changes:
+
+```javascript
+cfg = rs.conf();
+cfg.members[3].votes = 0;
+cfg.members[3].hidden = true;
+cfg.members[3].priority = 0;
+
+rs.reconfig(cfg);
+```
+
+- _Reconfiguring a replica set will always trigger an election that may or may not elect a new primary_
+
+### Read and Writes to a Replica Set
+
+Read and writes are safely perform in a replica set through a primary node.
+
+When we're connected to a secondary node, we can only run read commands after telling MongoDB that we're sure that's what we want to do. This is because MongoDB errs on the side of consistency. Given that we want to make sure you always have a consistent view of your data, you need to explicitly say otherwise if you want to read from the secondaries. To connect directly to a secondary node (or in fact to any node in the replica set), we need to exclude the replica set name as in the case when we connect to a replica set primary. When we use the replica set name to connect to a node, mongod process will automatically search for the primary and connect to it instead of the ndoe provided in the connection command. Assuming that "m103:27012" is a secondary in the replica set:
+
+```powershell
+mongo --host "m103:27012" -u "m103-admin" -p "m103-pass" --authenticationDatabase "admin"
+```
+
+Enabling read commands on a secondary node:
+
+```javascript
+rs.slaveOk() // Enabling read commands on a secondary node
+show dbs
+use newDB
+db.new_collection.find()
+```
+
+- We'll never be able to write to a secondary node. And as expected, we can only enable reads on this secondary. The purpose of this is to enforce strong consistency on our cluster. The Mongo shell lets us know that we can't write to the secondary.
+
+When crisis occurs, for example when we lost the majority of our nodes in the replica set, read and writes are handled as in the case of secondaries. This is because when this scenario happens, current primary is stepped down automatically, due to topology changes, and no new elections can be acomplished due to lack of a majority of nodes to vote.
+
+### Failover and Elections
+
+The primary node is the first point of contact for any client communicating to the database. Even if secondaries go down, the client will continue communicating with the node acting as primary until the primary is unavailable.
+
+#### Rolling Upgrades
+
+But what would cause a primary to become unavailable? _A common reason is maintenance_. So let's say we're doing a _rolling upgrade_ on a three-node replica set. A rolling upgrade just means we're upgrading one server at a time, starting with the secondaries. And eventually, we'll upgrade the primary.
+
+Rolling upgrades are great because they allow us to _perform updates while maximizing availability_ to any clients using the database. We'll start by stopping the MongoDB process on a secondary, and then bringing it back up with the new database version. And we can do the same thing to upgrade our other secondary. When all of our secondaries have been upgraded, it's time to upgrade the primary.
+
+But restarting the database server on the primary would trigger an election anyway, so we're going to safely initiate an election with rs.stepDown(). Once the election is complete, the last database server running the old database version will be a secondary node. So we can bring it down, and then bring it back up with the new database server without affecting the availability of the whole replica set.
+
+#### Elections
+
+_Elections take place whenever there's a change in topology. Reconfiguring a replica set will always trigger an election that may or may not elect a new primary._
+
+But you will definitely see a new primary elected in two cases:
+
+1. Anytime the current primary node becomes unavailable.
+2. When the current primary node steps down to be a secondary.
+
+The method to figure out which secondary will run for election begins with _priority_, and whichever node has the _latest_ copy of the data.
+
+So let's say every node in our set has the same priority, which is the default unless we've been setting priorities for the nodes in our set. And a given node has the latest copy of the data.
+
+- So it's going to run for election, and then automatically vote for itself.
+- Then it's going to ask the other two nodes for their support in the election.
+- Then they'll pledge their support as well. This node will be elected primary.
+
+There is also the very slim possibility that two nodes run for election simultaneously. But in a replica set with an _odd number of nodes_, this doesn't matter. These two nodes are both going to run, which means they're both going to vote for themselves. And then the reamining node is going to essentially decide which one of the candidate nodes becomes primary by virtue of a tiebreaker.
+
+This becomes a problem when we have an _even number of voting members_ in a set. If two secondaries are running for election simultaneously and there are an even number of remaining nodes in the set, there's a possibility that they split the vote and there's a tie. Now a tie is not the end of the world, because the nodes will just start over and hold another election. The problem with repeating elections over and over is that any applications accessing the data will have to pause all activity and wait until a primary is elected. An even number of nodes increases the chances an election has to be repeated, so we generally try to keep an odd number in our replica sets.
+
+Another important aspect of elections is the priority assigned to each node in a set. **Priority** is essentially the likelihood that a node will become the primary during an election. The default priority for a node is 1, and any node with priority 1 or higher can be elected primary. We can increase the priority of a node if we want it to be more likely at this node becomes primary. But changing this value alone does not guarantee that.
+We can also set the priority of node to be 0 if we never want that node to become primary. A priority 0 node can still vote in elections, but it can't run for election.
+
+So in MongoDB, nodes that aren't eligible to become the primary are defined as passive nodes. And we can see the node that the node we reconfigured to have priority 0 has appeared in our list of passives.
+
+The other two nodes are still eligible to become the primary.
+
+Something I want to point out here. When we call `rs.stepDown()`, it always tries to choose a new primary node. But in this case, other than the current primary, there's only one node that's eligible to become the primary. Which means that if we were to call an election right now, this node would have to become the primary node. So incidentally, by changing node priority, we've rigged the election in favor of this node.
+
+### Write Concerns
+
+![durability](durability.jpg)
+
+MongoDB write concern is an acknowledgment mechanism that developers can add to write operations. Higher levels of acknowledgment produce a stronger durability guarantee.
+
+Durability means that the write has propagated to the number of replica set member nodes specified in the write concern. The more replica set members that acknowledge the success of a write, the more likely that the write is durable in the event of a failure. Majority here is defined as a simple majority of replica set members. So divide by two, and round up.
+
+The trade-off with increased durability is time. More durability requires more time to achieve the specified durability guarantee since you have to wait for those acknowledgments.
+
+Let's go over the available write concern levels.
+
+- 0: a write concern of zero means that the application doesn't wait for any acknowledgments. The write might succeed or fail. The application doesn't really care. It only checks that it can connect to the node successfully. Think of this like a fire-and-forget strategy-- very fast, but with no safety checks in place.
+
+- 1:The default write concern is one. That means the application waits for an acknowledgment from a single member of the replica set, specifically, the primary. This is a baseline guarantee of success.
+
+- \>1: Write concerns greater than one increase the number of acknowledgments to include one or more secondary members. Higher levels of write concern correspond to a stronger guarantee of write durability. For example, I can set a write concern of three to require acknowledgment from all three replica set members.
+
+- "majority": Majority is a keyword that translates to a majority of replica set members. It's a simple majority. So divide the number of members by two and round up. So a three-member replica set has a majority of two. A five-member replica set would have a majority of three-- so on and so forth. The nice thing with majority is that you don't have to update your write concern if you increase the size of your replica set.
+
+* MongoDB supports write concern for both standalone and sharded clusters. For sharded clusters in particular, write concern is pushed down to the shard level.
+
+* No matter what write concern you specify, MongoDB always replicates data to every data-bearing node in the cluster. Write concern is just there for you to have a way of tracking the durability of inserted data.
+
+There are two additional write concern options that MongoDB provides:
+
+- The first is `wtimeout: <int>`. This lets you set a maximum amount of time the application waits before marking an operation as failed. An important note here-- hitting a wtimeout error does not mean that the write operation itself has failed. It only means that the application did not get the level of durability that it requested.
+
+- The second is `j: <true|false>`, or journal. This option requires that each replica set member to receive the write and commit to the journal filed for the write to be considered acknowledged. Starting with MongoDB 3.2.6, a write concern of majority actually implies j equals true. The advantage of setting j equals true for any given write concern is that you have a stronger guarantee that not only were the writes received, they've been written to an on-disk journal. If you set j to false, or if journaling is disabled on the mongod, the node only needs to store the data in memory before reporting success.
+
+#### Implementing Write Concerns
+
+In general, the core write commands all support write concern.
+
+Suppose we have a three-member replica set with an application inserting data into the primary.
+
+```javascript
+db.products.insert({
+  /* ... */
+});
+```
+
+- Data is replicated from the primary to the secondaries. _The default write concern is one_. So even though we don't set the write concern explicitly, the application implicitly assigns it a write concern of one. At this point, we know that our primary has received the write operation. We've received one acknowledgment based on our write concern of one. Since that matches the write concern we requested, we're good to go.
+
+- What would happen if the primary failed at this point of time before it completes replicating this write to the secondaries? The secondaries won't see the write. While it was successful on a single node, we had no guarantee that the write had propagated to the remaining replica set members. Even though we got the level of write concern we asked for, the guarantee level was too low to accommodate the scenario. As far as our application is concerned, this was a successful write. But when this primary comes back online the write would actually be rolled back.
+
+Let's imagine the same scenario but with a write concern of majority.
+
+```javascript
+db.products.insert(
+  {
+    /* ... */
+  },
+  {
+    writeConcern: {
+      w: "majority",
+    },
+  }
+);
+```
+
+- That means we now would need an acknowledgment from two members of our three-member replica set. The application waits until the primary reports that at least one of the secondaries has also acknowledged the write. With two acknowledgments the application can consider the write a success. Now if the primary happens to go down, we have a reasonable guarantee that at least one of the secondaries has received the write operation.
+
+If I set the write concern to three, the application would require an acknowledgment from all three members before considering the write successful.
+
+```javascript
+db.products.insert(
+  {
+    /* ... */
+  },
+  {
+    writeConcern: {
+      w: 3,
+    },
+  }
+);
+```
+
+- At this point, we might be desiring guarantees of data durability. So shouldn't we always set our write concern as high as possible? Well, a stronger level of durability guarantee comes with the trade off. Specifically, you have to wait for the acknowledgments to come in. That means your write operations may take longer than required if you requested a lesser or even no write acknowledgment. As the number of replica set nodes increase, write operations may take even longer to return as successful.
+
+Alternatively, what happens if one of our secondaries are down? Based on our write concern of 3, we need an acknowledgment from three members of the replica set. This write now blocks until the secondary comes back online which may take longer than is acceptable. This is where the `wtimeout` option comes in handy.
+
+```javascript
+db.products.insert(
+  {
+    /* ... */
+  },
+  {
+    writeConcern: {
+      w: 3,
+      wtimeout: 60,
+    },
+  }
+);
+```
+
+- You can set it to a reasonable time wherein the application stops waiting and moves forward throwing an error related to write concern. Remember, the timeout error does not mean that the write failed. We can assume that the primary and at least one secondary did acknowledge. But because we timed out waiting for the requested write concern, as far as the application is concerned, it did not receive the level of guarantee it requested.
+
+_Generally, setting a `w` of majority is a nice middle ground between fast writes and durability guarantees_.
+
+#### Recap on Write Concerns
+
+- write concern allows your applications to request a certain number of acknowledgments for a write operation for the MongoDB cluster. These acknowledgments represent increasing durability guarantees for a given write operations.
+
+- Write concern comes with a trade off of write speed. The higher guarantee you need that a right is durable, the more time the overall write operation requires to complete.
+
+- MongoDB supports a write concern on all deployment types. That means standalone, replica sets, and sharded clusters all support write concern.
+
+### Read Concerns
+
+Read concern is a companion to write concern, an acknowledgment mechanism for read operations where developers can direct their application to perform read operations where the returned documents meet the requested durability guarantee.
+
+Consider a replica set where applications insert a document, which is acknowledged by the primary.
+
+- Before the document can replicate to the secondaries, the application reads that document.
+
+- Suddenly, the primary fails. The document we have read has not yet replicated to the secondaries.
+
+- When the old primary comes back online, that data is going to be rolled back as part of the synchronization process. While you can access the rolled back data manually, the application effectively has a piece of data that no longer exists in the cluster. This might cause problems in the application, depending on your architecture.
+
+Read concern provides a way of dealing with the issue of data durability during a failover event. Just like how write concern lets you specify how durable write operations should be, read concern lets your application specify a durability guarantee for documents written by a read operation.
+
+The read operation only returns data acknowledged as having been written to a number of replica set members specified in the read concern. You can choose between returning the most recent data in a cluster or the data received by a majority of members in the cluster.
+
+- A document that does not meet the specified read concern is not a document that is guaranteed to be lost. It just means that at the time of the read, the data had not propagated to enough nodes to meet the requested durability guarantee.
+
+There are four read concern levels.
+
+- Local returns the most recent data in the cluster. Any data freshly written to the primary qualifies for local read concern. There are no guarantees that the data will be safe during a failover event. Local reads are the default for read operations against the primary.
+
+- Available read concerns the same as local read concern for replica set deployments. Available read concern is the default for read operations against secondary members. The main difference between local and available read concern is in the context of sharded clusters. Available read concern has special behavior in sharded clusters.
+
+- Majority read concern only returns data that has been acknowledged as written to a majority of replica set members. So here in our three-member replica set, our read operations would only return those documents written to both the primary and the secondary. The only way that documents returned by a read concern majority read operation could be lost is if a majority of replica set members went down and the documents were not replicated to the remaining replica set members, which is a very unlikely situation, depending on your deployment architecture. Majority read concern provides the stronger guarantee compared to local or available writes. But the trade-off is that you may not get the freshest or latest data in your cluster.
+
+* As a special note, the MMAPv1 storage engine does not support write concern of majority.
+
+- Linearizeable read concern was added in MongoDB 3.4, and has special behavior. Like read concern majority, it also only returns data that has been majority committed. Linearizeable goes beyond that, and provides read your own write functionality.
+
+So when should you use what read concern? Really depends on our application requirements. Fast, safe, or the latest data in your cluster. Pick two, that's the general idea.
+
+![read-concern-levels](read-concern-levels.jpg)
+
+- If we want fast reads of the latest data, local or available read concern should suit you just fine. But you are going to lose your durability guarantee.
+
+- If we want fast reads of the safest data, then majority read concern is a good middle ground. But again, you may not be getting the latest written data to your cluster.
+
+```javascript
+db.products
+  .find({ name: "things" /* ... */ })
+  .readConcern(("level": "majority"));
+```
+
+- If we want safe reads of the latest data at the time of the read operation, then linearizeable is a good choice, but it's more likely to be slower and it's single document reads only.
+
+* One thing to be really clear about, read concern **doesn't prevent deleting data using a CRUD operation**, such as delete. We're only talking about the durability of data returned by a read operation in context of a failover event.
+
+* Read preference for secondaries does allow you to specify local or available read concern, but you're going to lose the guarantee of getting the most recent data. So just remember that with secondary reads, local and available read concern is really just fast, but not necessarily the latest.
+
+#### Recap on Read Concerns
+
+- Read concern uses an acknowledgment mechanism for read operations where applications can request only that data which meets the requested durability guarantee.
+
+- There are four available read concern options:
+
+  - Local and available are identical for replica sets. Their behavior's more distinct in sharded clusters.
+  - Majority read concern is your middle ground between durability and fast reads, but it can return stale data.
+  - Linearizeable has the strongest durability guarantees, and always returns the freshest data in context of a read operation in exchange for potentially slow read operations as well as the overall restrictions and requirements for using it.
+
+- Finally, you can use read concern in conjunction with write concern to specify durability guarantees on both reads and writes. Remember that the two work together, but are not dependent on each other. You can use read concern with write concern or read concern without write concern.
+
+### Read Preference
+
+Read preference allows your applications to route read operations to specific members of a replica set. Read preference is principally a driver side setting. Make sure to check the driver documentation for complete instructions on specifying a read preference for read operations.
+
+Take a three member replica set, for example. By default, your applications read and write data on the primary. With replica sets, data is replicated to all data bearing (holding data) members. So both of the secondaries would eventually have copies of the primary data.
+
+What if we, instead, wanted to have our application prefer reading from a secondary member? With the read preference, we can direct the application to route its query to a secondary member of the replica set, instead of the primary.
+
+```javascript
+db.products
+  .find({ name: "Mongo 101" /* ... */ })
+  .readPref("secondaryPreferred");
+```
+
+There are five supported read preference modes:
+
+- "primary" read preference routes all read operations to the primary only. This is the default read preference.
+
+- "primaryPreferred" routes read operations to the primary. But if the primary is unavailable, such as during an election or fail-over event, the application can route reads to an available secondary member instead.
+
+- "secondary" routes read operations only to the secondary members in the replica set.
+
+- "secondaryPreferred" routes read operations to the secondary members. But if no secondary members are available, the operation then routes to the primary.
+
+- "nearest" routes read operations to the replica set member with the least network latency to the host, regardless of the members type. This typically supports geographically local read operations.
+
+With secondary reads, always keep in mind that depending on the amount of replication latency in a replica set, you can receive stale data. The big takeaway here, is that secondary reads always have a chance of returning stale data. How stale that data is, depends entirely on how much of a delay there is between your primary and your secondaries.
+
+Geographically distributed replica sets are more likely to suffer from stale reads, for example, than a replica set where all the members are in the same geographic region, or even the same data center.
+
+#### Read Preference Modes Summary
+
+| Scenario                                                  | Tradeoff                              | Read Preference    |
+| --------------------------------------------------------- | ------------------------------------- | ------------------ |
+| Read from the primary only                                | Secondaries are for availability only | primary(default)   |
+| if the primaru is unavailable, read from secondary        | Possible to read stale data           | primaryPreferred   |
+| Read from the secondary members only                      | Possible to read stale data           | secondary          |
+| If all secondaries are unavailable, read from the primary | Possible to read stale data           | secondaryPreferred |
+| Application's read from the geographically closest member | Possible to read stale data           | nearest            |
+
+#### Recap on Read Preference
+
+- read preference lets you choose what replica set members to route read operations to.
+- The big drawback of using a read preference, other than primary, is the potential for stale read operations.
+- The nearest read preference is most useful if you want to support geographically local reads. Just remember that it can come with the potential of reading stale data.
+
+## Chapter 03 - Sharding
+
+### What is Sharding?
