@@ -449,34 +449,141 @@
   *** Dictionary exercise ***
 */
 
-// /*
-    type Dict<T> = {
-      [anythingWeWant: string]: T | undefined;
+/*
+
+type Dict<T> = {
+  [anythingWeWant: string]: T | undefined;
+}
+
+function mapDict<T, S>(
+  dict: Dict<T>, 
+  fn: (val: T, idx: number) => S
+): Dict<S> {
+  const out: Dict<S> = {};
+  Object.keys(dict).forEach((dKey, idx) => {
+    const thisItem = dict[dKey];
+    if (typeof thisItem !== 'undefined') {
+      out[dKey] = fn(thisItem, idx)
     }
+  });
+  return out;
+}
 
-    function mapDict<T, S>(
-      dict: Dict<T>, 
-      fn: (val: T, idx: number) => S
-    ): Dict<S> {
-      const out: Dict<S> = {};
-      Object.keys(dict).forEach((dKey, idx) => {
-        const thisItem = dict[dKey];
-        if (typeof thisItem !== 'undefined') {
-          out[dKey] = fn(thisItem, idx)
-        }
-      });
-      return out;
-    }
-
-    console.log(mapDict({
-      a: 'a',
-      b: 'b'
-    }, (str) => ({ val: str })))
+console.log(mapDict({
+  a: 'a',
+  b: 'b'
+}, (str) => ({ val: str })))
     
+*/
 
+/* Additional exercises on Generics */
+
+/* 
+
+interface IBook { 
+  id: number;
+  author: string;
+}
+
+interface IItem<T = any> { 
+  [key: string]: T
+}
+
+function mapByKey<U extends IItem>(array: U[], key: keyof U): IItem<U> {
+  return array.reduce((dict, item) => ({ ...dict, [item[key]]: item }), {})
+}
+
+mapByKey([
+  { id: 1, author: "A" },
+  { id: 2, author: "B" },
+  { id: 3, author: "A" },
+  { id: 4, author: "C" },
+], "id")
+
+/* Output
+
+{
+  '1': { id: 1, author: 'A' },
+  '2': { id: 2, author: 'B' },
+  '3': { id: 3, author: 'A' },
+  '4': { id: 4, author: 'C' } 
+}
+
+*/
+
+/* ********** */
+
+/* 
+interface IItem<T = any> { 
+  [key: string]: T
+}
+
+interface IGroup<T> {
+  [key: string]: T[]
+}
+
+function groupByKey<U extends IItem>(array: U[], key: keyof U) : IGroup<U> {
+  // Array.prototype.reduce is a generic function on its own. We can specify the expected return type of the reduce to have better typing support.
+  // dict: IGroup<U> would've worked here too
+  return array.reduce<IGroup<U>>(( dict, item ) => {
+    let group = item[key]
+    if (group in dict) dict[group].push(item)
+    else dict[group] = [item]
     
-// */
+    return dict
+  }, {})
+}
 
+groupByKey(
+  [
+    { id: 1, author: 'A' },
+    { id: 2, author: 'B' },
+    { id: 3, author: 'A' },
+    { id: 4, author: 'C' },
+  ],
+  'author'
+  ) 
+  
+  
+  /* Output
+  
+  {
+    'A': [ { id: 1, author: 'A' }, { id: 3, author: 'A' } ],
+    'B': [ { id: 2, author: 'B' } ],
+    'C': [ { id: 4, author: 'C' } ],
+  }
+  
+  */
+ 
+/* ********** */
 
+/* 
 
+interface IItem<T = any> {
+  [key: string] : T
+}
 
+type ValueGetter<T = any> = (obj: T) => string | number
+
+type SortingOrder = "ascending" | "descending"
+
+function sortBy<U extends IItem>(array: U[], sortBy: ValueGetter<U>, sortOrder: SortingOrder) {
+  if(sortOrder === "ascending") 
+    return [...array].sort((a,b) => sortBy(a) > sortBy(b) ? 1 : -1)
+  if (sortOrder === "descending")
+    return [...array].sort((a,b) => sortBy(a) > sortBy(b) ? -1 : 1)
+  return 'Sort order should be "ascending" or "descending"'
+}
+
+sortBy(
+  [
+    { id: 1, author: 'A' },
+    { id: 2, author: 'B' },
+    { id: 3, author: 'A' },
+    { id: 4, author: 'C' },
+  ],
+  (item) => item.id,
+  "descending"
+)
+
+*/
