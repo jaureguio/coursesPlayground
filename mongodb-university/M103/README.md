@@ -505,6 +505,9 @@ mongorestore --drop --port 30000 dump/
 mongoexport --help
 mongoexport --port 30000 --db applicationData --collection products
 mongoexport --port 30000 --db applicationData --collection products -o products.json
+
+# Example of exporting from a sharded cluster. Only one sharded db (base of host) is specified along with its port
+mongodump --host "cluster0-shard-00-00-jxeqq.mongodb.net:27017" --authenticationDatabase admin --ssl -u m121 -p aggregations --db aggregations --collection movies
 ```
 
 - To use mongoimport we can run the commands as follows:
