@@ -65,6 +65,8 @@ db.movies.aggregate([
     },
   },
   {
+    // There are times when we want to make sure that the field is an array, and 
+    // that it is not empty. We can do this within $match.
     $match: {
       multiple_roles: { $elemMatch: { $exists: true } },
     },
