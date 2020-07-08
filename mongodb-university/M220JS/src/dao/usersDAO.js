@@ -37,9 +37,9 @@ export default class UsersDAO {
    * @returns {Object | null} Returns either a single user or nothing
    */
   static async getUser(email) {
-    // TODO Ticket: User Management
+    // DONE Ticket: User Management
     // Retrieve the user document corresponding with the user's email.
-    return await users.findOne({ someField: "someValue" })
+    return await users.findOne({ email })
   }
 
   /**
@@ -56,11 +56,11 @@ export default class UsersDAO {
     */
 
     try {
-      // TODO Ticket: User Management
+      // DONE Ticket: User Management
       // Insert a user with the "name", "email", and "password" fields.
-      // TODO Ticket: Durable Writes
+      // DONE Ticket: Durable Writes
       // Use a more durable Write Concern for this operation.
-      await users.insertOne({ someField: "someValue" })
+      await users.insertOne({ ...userInfo }, { w: "majority" })
       return { success: true }
     } catch (e) {
       if (String(e).startsWith("MongoError: E11000 duplicate key error")) {
@@ -79,12 +79,13 @@ export default class UsersDAO {
    */
   static async loginUser(email, jwt) {
     try {
-      // TODO Ticket: User Management
+      // DONE Ticket: User Management
       // Use an UPSERT statement to update the "jwt" field in the document,
       // matching the "user_id" field with the email passed to this function.
       await sessions.updateOne(
-        { someField: "someValue" },
-        { $set: { someOtherField: "someOtherValue" } },
+        { "user_id": email },
+        { $set: { user_id: email, jwt } },
+        { upsert: true }
       )
       return { success: true }
     } catch (e) {
@@ -100,9 +101,9 @@ export default class UsersDAO {
    */
   static async logoutUser(email) {
     try {
-      // TODO Ticket: User Management
+      // DONE Ticket: User Management
       // Delete the document in the `sessions` collection matching the email.
-      await sessions.deleteOne({ someField: "someValue" })
+      await sessions.deleteOne({ user_id: email })
       return { success: true }
     } catch (e) {
       console.error(`Error occurred while logging out user, ${e}`)
@@ -118,9 +119,9 @@ export default class UsersDAO {
    */
   static async getUserSession(email) {
     try {
-      // TODO Ticket: User Management
+      // DONE Ticket: User Management
       // Retrieve the session document corresponding with the user's email.
-      return sessions.findOne({ someField: "someValue" })
+      return sessions.findOne({ user_id: email })
     } catch (e) {
       console.error(`Error occurred while retrieving user session, ${e}`)
       return null
@@ -166,11 +167,11 @@ export default class UsersDAO {
 
       preferences = preferences || {}
 
-      // TODO Ticket: User Preferences
+      // DONE Ticket: User Preferences
       // Use the data in "preferences" to update the user's preferences.
       const updateResponse = await users.updateOne(
-        { someField: someValue },
-        { $set: { someOtherField: someOtherValue } },
+        { email },
+        { $set: { preferences } },
       )
 
       if (updateResponse.matchedCount === 0) {
