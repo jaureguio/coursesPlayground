@@ -22,10 +22,15 @@ concern timeout limit to 2500 milliseconds.
 
 MongoClient.connect(
   process.env.MFLIX_DB_URI,
-  // TODO: Connection Pooling
-  // Set the poolSize to 50 connections.
-  // TODO: Timeouts
-  // Set the write timeout limit to 2500 milliseconds.
+
+  // Ticket: Principle of Least Privilege
+  // DONE!
+  // process.env.MFLIX_DB_URI_TEST,
+  
+  // DONE: Connection Pooling (poolSize is equal to 100 by default).
+  // Set the poolSize to 50 connections: the configuration object should be { poolSize: 50, useNewUrlParser: true },
+  // DONE: Timeouts
+  // Set the write timeout limit to 2500 milliseconds: { wtimeout: 2500, useNewUrlParser: true },
   { useNewUrlParser: true },
 )
   .catch(err => {
@@ -36,6 +41,13 @@ MongoClient.connect(
     await MoviesDAO.injectDB(client)
     await UsersDAO.injectDB(client)
     await CommentsDAO.injectDB(client)
+    
+    // The following is a possible way (needs to be confirmed yet) to create a new user using the NodeJS MongoDB 
+    // driver and this connection (given the appropiate URI's user permissions to perform such action)
+    // 
+    // let admin = client.db(process.env.MFLIX_NS).admin()
+    // await admin.addUser("mflixAppUser", "mflixAppPwd", { roles: [{ db: process.env.MFLIX_NS, role: "readWrite" }] })
+
     app.listen(port, () => {
       console.log(`listening on port ${port}`)
     })
