@@ -1,0 +1,37 @@
+{
+  "files": [
+    "README.md"
+  ],
+  "imageSize": 100,
+  "commit": false,
+  "contributorsPerLine": 7,
+  "projectName": "testing-react-apps",
+  "projectOwner": "kentcdodds",
+  "repoType": "github",
+  "repoHost": "https://github.com",
+  "skipCi": true,
+  "contributors": [
+    {
+      "login": "kentcdodds",
+      "name": "Kent C. Dodds",
+      "avatar_url": "https://avatars.githubusercontent.com/u/1500684?v=3",
+      "profile": "https://kentcdodds.com",
+      "contributions": [
+        "code",
+        "doc",
+        "infra",
+        "test"
+      ]
+    },
+    {
+      "login": "gautam-pahuja",
+      "name": "Gautam Pahuja",
+      "avatar_url": "https://avatars1.githubusercontent.com/u/32642691?v=4",
+      "profile": "https://relayr.io/",
+      "contributions": [
+        "test"
+      ]
+    }
+  ],
+  "commitConvention": "none"
+}
