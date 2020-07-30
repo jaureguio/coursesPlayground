@@ -1120,3 +1120,388 @@ Geographically distributed replica sets are more likely to suffer from stale rea
 ## Chapter 03 - Sharding
 
 ### What is Sharding?
+
+The way we distribute data in MongoDB is called sharding. It allows us to grow our dataset horizontally rather than vertically, without worrying about being able to store it all on one server. Instead we divide the dataset into pieces and then distribute the pieces across as many shards as we want. These shards forms a Sharded Cluster.
+
+  - In order to guarantee high availability in our sharder cluster, we deploy each shard as a replica set, ensuring a level of fault tolerance against each piece of data regardless of which shard actually contains that data.
+
+In between a Sharded Cluster and its clients, we set up a kind of router process that accepts queries from clients and then figures out which shard should receive that query. This router process is called Mongos. Clients then connect to Mongos (we can have any number of Mongos processes so we can service many different applications or requests to the same Sharded Cluster).
+
+  - Mongos uses metadata about which data is contained on each shard. This metadata is stored on the Config Servers (these ones also follows a replica set architecture to ensure high availability as well, so a Config Server replica set is deployed).
+
+### When to Shard?
+
+- We first need to check if is still economically viable to vertical scale. In the case we have a small set of servers, checking that, increasing that server's unit resources, in any of the identified resource bottlenecks, gives you an increased performance with very little downtime in an economical scale way. Adding 10 times more RAM to solve a memory allocation bottleneck does not cost you 100 times more, if that's the case, great. That should be your reasoning for continuing to scale up.
+
+- Another aspect to consider is the impact on our operational tasks. Lets say for example an increase in disk size, from 1 to 20 terabytes of storage space. This will mean loading up to 15 tearbytes of data in the case of a 75% operational run, which means 15 times more data, and thus time, to backup. Probably even biger penalty while restoring such large servers, as well as doing initial syncs between replica sets. In such scenario, having a horizontal scale and distributing the amount of data across different shards, will allow getting horizontal performance gains like parallelization of the backup, restore, and initial sync processes.
+
+- The same translate to an impact on the operational workload. 15 times bigger dataset per MongoDB will most likely translate to at least 15 times bigger indexes. They will require more RAM for those indexes to be kept in memory. That said, increasing the size of the disks most likely will imply eventual increasing the size of our RAM, which brings added cost or other bottlenecks to our system. In such a scenario sharding, the parallelization of your workload across shards, might be way more beneficial for your application and budget than the waterfall of potential expensive upgrades. A general rule of thumb indicates that individual servers should contain two to 5 terabytes of data.
+
+If our application relies heavily on aggregation framework commands and if the response time of those commands becomes slower over time, you should consider sharding your cluster.
+
+### Setting up a Sharded Cluster
+
+Configuration file for the config servers:
+
+- csrs_1.conf:
+
+  ```yaml
+  sharding:
+    clusterRole: configsvr
+  replication:
+    replSetName: m103-csrs
+  security:
+    keyFile: /var/mongodb/pki/m103-keyfile
+  net:
+    bindIp: localhost,192.168.103.100
+    port: 26001
+  systemLog:
+    destination: file
+    path: /var/mongodb/db/csrs1.log
+    logAppend: true
+  processManagement:
+    fork: true
+  storage:
+    dbPath: /var/mongodb/db/csrs1
+  ```
+
+- csrs_2.conf:
+
+  ```yaml
+  sharding:
+    clusterRole: configsvr
+  replication:
+    replSetName: m103-csrs
+  security:
+    keyFile: /var/mongodb/pki/m103-keyfile
+  net:
+    bindIp: localhost,192.168.103.100
+    port: 26002
+  systemLog:
+    destination: file
+    path: /var/mongodb/db/csrs2.log
+    logAppend: true
+  processManagement:
+    fork: true
+  storage:
+    dbPath: /var/mongodb/db/csrs2
+  ```
+
+- csrs_3.conf:
+
+  ```yaml
+  sharding:
+    clusterRole: configsvr
+  replication:
+    replSetName: m103-csrs
+  security:
+    keyFile: /var/mongodb/pki/m103-keyfile
+  net:
+    bindIp: localhost,192.168.103.100
+    port: 26003
+  systemLog:
+    destination: file
+    path: /var/mongodb/db/csrs3.log
+    logAppend: true
+  processManagement:
+    fork: true
+  storage:
+    dbPath: /var/mongodb/db/csrs3
+  ```
+
+
+Starting the three config servers:
+
+```powershell
+mongod -f csrs_1.conf
+mongod -f csrs_2.conf
+mongod -f csrs_3.conf
+``` 
+
+we enabled this replica set to use authentication, and the key file authentication is fine, because we already created our key file. We're going to share the same key file in this setup, since all the MongoD instances are running on the same virtual machine. But in a real production environment, X509 certificates would be the way to go. Having a shared password like the key file, when shared across multiple machines, increases the risk of that file being compromised
+
+Connect to one of the config servers:
+
+```powershell
+mongo --port 26001
+```
+Initiating the CSRS:
+
+```javascript
+
+rs.initiate()
+
+// Creating super user on CSRS:
+
+use admin
+db.createUser({
+  user: "m103-admin",
+  pwd: "m103-pass",
+  roles: [
+    {role: "root", db: "admin"}
+  ]
+})
+ 
+// Authenticating as the super user:
+
+db.auth("m103-admin", "m103-pass")
+
+// Add the second and third node to the CSRS (be aware of the bindip validity, previous similar bindip usage didn't work but instead the replica set name):
+
+rs.add("192.168.103.100:26002")
+rs.add("192.168.103.100:26003")
+
+// Check rs status
+rs.isMaster()
+```
+
+Mongos config (mongos.conf):
+
+```yaml
+
+# There is no dbpath. That's because Mongos doesn't need to store any data. All of the data used by Mongos is stored on the config servers.
+
+# Note that we've specified the entire replica set, instead of the individual members.
+sharding:
+  configDB: m103-csrs/192.168.103.100:26001,192.168.103.100:26002,192.168.103.100:26003
+security:
+  keyFile: /var/mongodb/pki/m103-keyfile
+net:
+  bindIp: localhost,192.168.103.100
+  port: 26000
+systemLog:
+  destination: file
+  path: /var/mongodb/db/mongos.log
+  logAppend: true
+processManagement:
+  fork: true
+```
+
+Connect to mongos:
+
+   - Mongos is a different process with different properties, so just bear that in mind. So as we saw before, Mongos has auth- enabled, and it's also going to inherit any users that we created on the config servers. So the previously created user is actually ready to go.
+
+```powershell
+mongo --port 26000 --username m103-admin --password m103-pass --authenticationDatabase admin
+```
+Check sharding status:
+
+```javascript
+/* MongoDB Enterprise mongos > */ sh.status()
+```
+
+Updated configuration for node1.conf:
+
+```yaml
+# The following line needs to be added to all our replica set nodes
+sharding:
+  clusterRole: shardsvr
+
+storage:
+  dbPath: /var/mongodb/db/node1
+  wiredTiger:
+    engineConfig:
+      cacheSizeGB: .1
+net:
+  bindIp: 192.168.103.100,localhost
+  port: 27011
+security:
+  keyFile: /var/mongodb/pki/m103-keyfile
+systemLog:
+  destination: file
+  path: /var/mongodb/db/node1/mongod.log
+  logAppend: true
+processManagement:
+  fork: true
+replication:
+  replSetName: m103-repl
+```
+
+Updated configuration for node2.conf:
+
+```yaml
+
+# The following line needs to be added to all our replica set nodes to enable sharding based off of them
+sharding:
+  clusterRole: shardsvr
+
+storage:
+  dbPath: /var/mongodb/db/node2
+  wiredTiger:
+    engineConfig:
+      cacheSizeGB: .1
+net:
+  bindIp: 192.168.103.100,localhost
+  port: 27012
+security:
+  keyFile: /var/mongodb/pki/m103-keyfile
+systemLog:
+  destination: file
+  path: /var/mongodb/db/node2/mongod.log
+  logAppend: true
+processManagement:
+  fork: true
+replication:
+  replSetName: m103-repl
+```
+
+Updated configuration for node3.conf:
+
+```yaml
+# The following line needs to be added to all our replica set nodes
+sharding:
+  clusterRole: shardsvr
+
+storage:
+  dbPath: /var/mongodb/db/node3
+  wiredTiger:
+    engineConfig:
+      cacheSizeGB: .1
+net:
+  bindIp: 192.168.103.100,localhost
+  port: 27013
+security:
+  keyFile: /var/mongodb/pki/m103-keyfile
+systemLog:
+  destination: file
+  path: /var/mongodb/db/node3/mongod.log
+  logAppend: true
+processManagement:
+  fork: true
+replication:
+  replSetName: m103-repl
+```
+
+If these nodes are currently running, we need to perform a rolling upgrade, restarting the secondaries with the new configuration files first, and then stepping down the primary in order to shut it down and restart it with its new configuration.
+
+Connecting directly to secondary node (note that if an election has taken place in your replica set, the specified node may have become primary. Also, note that this procedure is repeated for any other secondary node):
+
+```powershell
+mongo --port 27012 -u "m103-admin" -p "m103-pass" --authenticationDatabase "admin"
+```
+
+```javascript
+// Shutting down node:
+
+use admin
+db.shutdownServer()
+
+// Restarting node with new configuration:
+
+mongod -f node2.conf
+```
+
+Stepping down current primary:
+
+```powershell
+mongo --port 27011 -u "m103-admin" -p "m103-pass" --authenticationDatabase "admin"
+```
+
+```javascript
+rs.stepDown()
+```
+
+  * Restart this node with the updated configuration as well.
+
+
+Adding new shard to cluster from mongos:
+
+```powershell
+mongo --port 26000 -u "m103-admin" -p "m103-pass" --authenticationDatabase "admin"
+```
+
+```javascript
+sh.addShard("m103-repl/192.168.103.100:27012")
+```
+
+### Config DB
+
+- We should really never need to write any data in this database.
+- It is internally maintained by MongoDB.
+
+This database hold useful information we can read from it. We can check the topology from a cluster running the `sh.status()` on a Mongos instance. This information is stored in the Config DB.
+
+We can switch to the Config DB running `use config` and check the collections in it (`show collections`).
+
+  - The `databases` collection will return (using `db.databases.find().pretty()`) each db in the sharded cluster as one document, giving us the primary shard for each and the partition telling us whether or not sharding has been enabled in the given db. 
+  - The `collections` will only give us information on collections that have been sharded. Information like the shard key used and the uniqueness of it is found here. To query the information we can run `db.collections.find().pretty()`
+  - `shards` collection will tell us about the shards in our cluster. To query the information we can run `db.shards.find().pretty()`
+  - The `chunks` collection returns us each chunk for every collection in a given database on one document. Here we can found fields indicating the inclusive minimum and exclusive maximum range that defines the chunk range of the shard key value. These values allow to determine where each piece of data will end up stored.
+  - The `mongos` collection brings us information about the mongos processes connected to the current cluster.
+
+### Shard Key
+
+This is the indexed field or fields that MongoDB uses to partition data in a sharded collection, and distribute it across the shards in our cluster. MongoDB uses the shard key to divide up documents in a collection into logical groupings that MongoDB then distributes across our sharded cluster. These groupings are referred to as chunks in MongoDB.
+
+  - Every time we write a new document to the collection, the MongoS router checkes which shard contains the appropriate chunk for that document's key value, and routes it to that sharded chunk only. This means that your shard key must be present in every document in the collection, and every new document inserted.
+  - Shard keys also support distributed read operations. If you specify the shard key as part of your queries, MongoDB can redirect the query to only those chunks, and therefore, shards that contain the related data. Ideally, your shard key should support the majority of queries you run on the collection. That way, the majority of our read operations can be targeted to a single shard.
+  - Without the shard key in the query, the Mongo S router would need to check each shard in the cluster to find the documents that match the query.
+  - We cannot select a field or fields for our shard key if we do not have an existing index for the field or fields. We'll need to create the index first before you can shard.
+  - Sharding is a permanent operation. Once you have selected your shard key, that's it. Furthermore, the shard key is immutable. Not only can you not change it later, you cannot update the shard key values of the shard key fields for any document in the collection. We cannot unshard a collection. This kind of builds off of shard keys being immutable. Once you have sharded a collection, you cannot unshard it later.
+
+#### Steps for sharding
+
+We connect to the Mongos process and then:
+
+```javascript
+sh.enableSharding("<database>")
+
+// Find one document from the products collection, to help us choose a shard key:
+
+db.products.findOne() // products is the collection on which we will shard
+
+// Create an index on sku:
+
+db.products.createIndex( { "sku" : 1 } )
+
+// Shard the products collection on sku:
+
+sh.shardCollection("m103.products", {"sku" : 1 } ) // sh.shardCollection("<database>.<collection>", { shard key })
+
+// Checking the status of the sharded cluster:
+
+sh.status()
+```
+
+*As of MongoDB 4.2, the shard key value is mutable, even though the shard key itself is immutable.*
+
+### Picking a Good Shard Key
+
+The goal is shard key whose values provides good write distribution. There are three basic properties: 
+
+  - Cardinality:
+    - The shard key should have high cardinality, which is the measure of the number of elements within a set of values. In the context of the shard key, it is the number of unique possible shard key values.
+    - It is important because if our shard key supports a small number of unique possible values, then that constrains the number of shards we can have in our cluster. Remember, chunks define boundaries based on shard key values, and a unique value can only exist on one chunk. Having a higher cardinality gives you more chunks, and with more chunks the number of shards can also grow, not restraining your ability to grow the cluster.
+  - Frequency:
+    - It represents how often a unique value occurs in the data. A shard key whose values have high frequency of occurance will lead to bad performance (hot spotting) even when having a good cardinality. If our workload has a low frequency of the possible shard key values, then the overall distribution is going to be more even.
+  - Monolitical Change:
+    - This means that the possible shard key values for a new document changes at a steady and predictable rate. The problem here resides with the fact that each chunk of splitted data have an inclusive lower and exclusive upper bound to shard key values. If all of your new documents have a higher shard key value than the previous one, then they're all going to end up in that one chunk that contains the upper boundary of your possible shard key values. So, even though timestamps for example, have technically very high cardinality, lots of unique values, and very low frequency, nearly no repetition of those unique values, it ends up being a pretty bad shard key. Fun fact, the object ID data type is actually monotonically increasing. That's why sharding on the ID field isn't a good idea.
+
+
+The ideal shard key provides good distribution of its possible values, have high cardinality, low frequency, and change non monotonically. A shard key that can fulfill those properties is more likely to result in an even distribution of written data. *When choosing a shard key, you should consider whether your choice supports the queries you run most often.*
+
+#### Recap
+
+ - Good shard keys provide even right distribution and, where possible, read isolation by supporting targeted queries.
+ - You want to consider the cardinality and frequency of the shard keys, and avoid monotonically changing shard keys.
+ - Unsharding a collection is hard (however, we can you the Mongo dump and Mongo restore utilities, you can dump, drop, and restore the collection).
+ - Whenever possible, try to test your shard keys in a staging environment first, before sharding in production environments.
+
+### Hashed Sharded Key
+
+This is a shard key where the underlying index is hashed. With a hashed shard key, MongoDB first hashes the value of it, then uses the hash to decide which chunk to place the document in. The hash shard key does not mean that MongoDB stores your shard key values with hashes. The actual data remains untouched. Instead, the underlying index backing the shard key itself is hashed. And MongoDB uses the hashed index for partitioning your data, so you end up with a more even distribution of your data across the sharded cluster.
+
+  - We want to use hashed shard keys when dealing with monolitically increasing or decreasing shard key fields like dates or timestamps.
+  - Now there are a few drawbacks to using a hashed shard key. Since everything is hashed now, documents within a range of shard key values are likely to be completely distributed across the sharded cluster. So ranged queries on the shard key field will now have to hit multiple shards, instead of a single shard.
+  - Comparatively, a non-hash shard key is more likely to produce documents that are on a single chunk in a single shard, meaning ranged queries are more likely to be targeted with a non-hashed shard key.
+  - We're going to lose the ability to use features like zone sharding for the purpose of geographically isolated reads and writes. If everything is randomly distributed across every shard in the cluster, there's no real way to isolate data into groupings like geography. You can't create hashed compound indexes. You can only hash a single field shard key. That plays into why these are best used for monotonically changing single fields, like timestamps. Also, the value in the hashed index must not be an array.
+  - Hashed index must be on a single non-array field, and it doesn't support fast sorting.
+
+#### To Enable Sharding Using a Hashed Shard Key
+
+1. Use `sh.enableSharding("<database>")` 
+2. Use `db.<collection>.createIndex({ "<filed>": "hashed" })` to create the index for our shard key fields.
+3. Use `sh.shardCollection("<database>.<collection>", { <shard key field>: "hashed" })` to shard the collection.
+
+### Chunks
+
