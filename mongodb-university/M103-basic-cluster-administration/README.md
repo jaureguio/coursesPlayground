@@ -1505,3 +1505,109 @@ This is a shard key where the underlying index is hashed. With a hashed shard ke
 
 ### Chunks
 
+One of the most important pieces of information that the config servers hold, is the mapping of the chunks to shards. We can check the definition of a chunk by running the `db.chunks.findOne()`, on the `config` database from the mongos of our sharded cluster. Information like the namespace the chuncks belongs to, when it was last modified, the shard which holds the chunk, and more importantly, the chunk bounce min and max fields for it.
+
+  - Once we add documents in our collections, these documents contain fields that we can use as shard keys.
+  - The chunk's lower bound is inclusive and the upper one is exclusive.
+  - The different values that our shard key may hold will define the keyspace of our sharding collection.
+  - As time progresses, the cluster will split up that initial chunk into several others to allow data to be evenly distributed between shards.
+  - All documents of the same chunk live in the same shard.
+  - The number of chunks that our shard key allows may define the max number of shards of our system. This is why cardinality of the shard key is an importan aspect to consider. There are other aspects that will determine the number of chunks within our shard:
+  
+  1. The first one is our chunk size. By default, MongoDB takes 64 mb as the default chunk size. About this size the chunk will get splitted. We can define a chunk size between the values of 1 mb and 1024 mb (1 gb). The chunk size is configurable during runtime, so we can easily change this parameter.
+    - We can check the amount of chunks and how they are distributed (balanced) in our cluster by running `sh.status()`. We can lower the size of the chunks in order to end up incrementing the quantity of chunks in the cluster by changing the settings like so: `db.settings.save({ _id: "chunksize", value: 2 })`. The chunk size value is specified in mb.
+      - This change is going to take effect only after some data is added to the cluster through mongos. We could import some new data through `mongoimport` for example. It will take some time for the cluster to actually balace everything between all shards.
+
+  2. Another aspect that will be important for the number of chunks that we can generate will be the shard key values frequency. Although we may have a shard key with good cardinality, we may also have an abnormal high frequency of some keys over time.
+    - Jumbo chunks: these represent chunks which are way larger than the default or defined chunk size. The minute a chunk becomes larger than the defined chunk size, they will be marked as jumbo chunks.
+      - Jumbo chunks cannot be moved. If the balancer sees a chunk which is marked as jumbo, you will not even try to balance it. We will just leave it in its place, because it's basically marked as too big to be moved.
+      - In very extreme cases, there will be no split point on those chunks, and therefore, they will not be able to be moved at all, or even split, and that can be very, very damaging situation.
+
+#### Recap on Chunks
+
+- Chunks are logical groups of documents that are based out of the shard key space, and have bounds associated to it.
+- Min bound inclusive, max bound exclusive.
+- A chunk can only live at one designated shard at the time. All documents within the bound defined by the chunk live in the same shard.
+- Shard key cardinality frequency and configured chunk size will determine the number of chunks in our sharded collection.
+
+### Balancing
+
+MongoDB splits our sharded collections into chunks of data. As we insert data into the collection, the number of chunks on any given shard will grow. The MongoDB balancer identifies which shards have too many chunks across shards in the sharded cluster in an attempt to achieve even data distribution.
+
+  - Currently, the balancer process runs on the primary member of the config server replica set. In prior versions, the mongos was resposible for running the balancer process.
+  - The balancer process checks the chunked distribution of data across the sharded cluster and looks for certain migration thresholds. If it detects that there is an imbalance, it starts a balancer round.
+  - The balancer can migrate chunks in parallel. A given shard cannot participate in more than one migration at a time.
+    - We take the floor of n divided by, where n is the number of shards and we have the number of chunks that can be migrated in a balancer round.
+  - Balancer rounds happen consecutively until the balancer process detects that the cluster is as evenly distributed as possible. Typically, the mongos handles initiating a chunk split, but the balancer is fully capable of performing splits. It will do so if detects chunks that need to be splitted or as a part of defining chunk ranges for zone sharding.
+
+There is a performance impact of migrating chunks. The balancer already has behavior built in to minimize workload disruption, such as the one chunk per shard limitation. To that end, MongoDB surfaces a number of methods for controlling the behavior of the balancer:
+
+  - `sh.startBalancer(timeout, interval)`
+  - `sh.stopBalancer(timeout, interval)`
+  - `sh.setBalancerState(boolean)`
+
+We can start/stop the balancer in at any time. If we stop it in the middle of a round then the balancer stops only after that balancing round completes. `sh.startBalancer` and `sh.stopBalancer` allow us to set a time limit timeout value for how long to wait to stop or start the balancer. The interval defines how long the client should wait before checking the balancer status again.
+`sh.setBalancerState` just takes a boolean and is either on or off. There is also a process for scheduling a time window for when this sharded cluster balancer can run. It does require modifying the config database.
+
+#### Recap on Balancing
+
+- The sharded cluster balancer is reponsible for evenly distributing chunks od data across our sharded cluster.
+- Starting with MongoDB 3.4, the balancer runs on the Primary member of the config server replica set.
+- The balancer process is completely automated and requires minimal user input or guidance. There are methods for controlling it however.
+
+### Queries in a Sharded Cluster
+
+The mongos process is the principal interface point for our client applications. All queries must be redirected to the mongos process or processes. The first thing that the mongos does is to determine the list of shards that must receive the query. Depending on the query predicate, the mongos either targets every shard or a subset of shards in the cluster.
+
+  - If the query predicate includes the shard key, then the mongos can specifically target only those shards that contain the shard key values or values specified in the query predicate. These targeted queries are very efficient.
+  - If the query predicate does not include the shard key, or it's very wide in scope, such as a range query that span multiple or all shards, then the mongos has to target every shard in the cluster. These scatter gather operations can be slow, depending on factors such as the number of shards in our cluster.
+
+Whether we're doung tarfeted or scatter gather queries, the mongos opens a cursor against each of the targeted shards. Each cursor executes the query predicate, and returns any data returned by the query for that shard. The mongos merges all of the results together to form the total set of documents that fulfills this querym and then returns that set of documents to the client application. The mongos also has specific behaavior when it comes to cursor operators, such as sort, limit and skip:
+
+  - Sort(): the mongos pushes the sort to each shard and merge-sorts the results.
+  - Limit(): the mongos passes the limit to each targeted shard, the re-applies the limit to the merged set of results.
+  - Skip(): the mongos performs the skip against the merged set of results. When used in conjunction with a limit(), the mongos will pass the limit plus the value of the skip() to the shards to ensure a sufficient number of documents are returned to the mongos to apply the final limit() and skip() successfully.
+
+#### Recap on Queries in a Sharder Cluster
+
+- Mongos handles all queries in the cluster.
+- Mongos builds a list of shards to target a query.
+- Mongos merges the results from each shard.
+- Mongos supports standard query modifiers like sort, limit and skip.
+
+### Target Queries vs Scatter Gather
+
+The config server replica set keeps a table of the shard-chunk relationships. The mongos keeps a cached local copy of this metadata table, that means that each mongos has a map of which shard contains any given shard key value.
+
+  - min/max key represents the lowest/highest value possible shard key value -- think of this like `-infinity`/`+infinity`.
+  - These chunks handle capturing the lower and upper boundaries of the shard key values. This way we don't have to worry on redefining what the lowest and highest values of the shard key value are.
+
+When the mongos receives a query which predicate includes the shard key, the mongos can look on the table mentioned previously and know exactly which shards to direct that query to. The mongos opens a cursor only against those shards that can satisfy the query.
+  
+  - Because the mongos is targeting the query to a subset of shards in the cluster, these targeted queries are generally faster than having to checking with every shard in the cluster. The merge-results stage on the mongos can be bypassed if the query can be targeted completely into a single unique shard.
+
+When the query predicate does not include the shard key, the mongos can not derive exactly which shards satisfy the query. These scatter-gather queries must necessary pend and wait for the reply for every shard in the cluster regardless they can contribute to the execution of the query or not. Depending on the number of shards in our cluster, the amount of network latency between shards and mongos and a number of other factors, these queries can be slow. Thats why is advised to choose a shard key that satisfy the majority of our queries or at least the most common and important ones.
+
+  - Ranged queries on a hash shard key are almost always scatter-gather, because two adjecent shard key values are likely to be in to completely different chunks. There is a pretty low probability that the mongos would be able to satisfy the range query with a subset of shards within the hash-based range query predicate. Single documents query on a hashed-shard key can be targeted though.
+
+One thing to emphasize, if we are using a compound index as our shard key, then we can specify each prefix until the entire shard key and still get a targeted query:
+
+```javascript
+// Shard key: { "sku": 1, "type": 1, "name": 1 }
+
+// Targetable queries:
+db.products.find({ "sku": ... })
+db.products.find({ "sku": ..., "type": ... })
+db.products.find({ "sku": ..., "type": ..., "name": ... })
+```
+
+We can inspect how our queries are resolved (how the results are retrieved from the cluster) using the `.explain()` query modifier when executing our queries: `db.products.find({ "sku": ... }).explain()`. This query predicate is using a prefix shard key value:
+
+  - When a prefix of the shard key value is used, we face the possibilty of having a single shard stage as notice from the output of `.explain()` query modifier. That means that for a given query, not only was Mongos able to target a subset of shards, it was able to retrieve the entire results set from a single shard without needing to merge results. 
+  - The shards array returned from .explain() displays each shard queried, and provies the specific plan executed on that shard. The winning plan most likely will be showing that an index scan (IXSCAN) is performed, because Mongod could use the "sku" index for executing the query.  
+
+#### Recap
+
+- Targeted queries require the shard key in the query.
+- Ranged queries on the shard key may still require targeting every shard in the cluster.
+- Without the shard key, the mongos must perform a scatter-gather query.
