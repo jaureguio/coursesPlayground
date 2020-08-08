@@ -1,0 +1,110 @@
+{
+  "name": "calculator-app",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Cypress Workshop",
+  "main": "index.js",
+  "engines": {
+    "node": ">=8",
+    "npm": ">=6",
+    "yarn": ">=1"
+  },
+  "scripts": {
+    "exercises": "start-server-and-test dev http://localhost:3000 cy:open:exercises",
+    "final": "start-server-and-test dev http://localhost:3000 cy:open:final",
+    "test": "is-ci \"test:run\" \"test:dev\"",
+    "cy:run": "npm run cy:run:exercises && npm run cy:run:final",
+    "cy:run:final": "cypress run",
+    "cy:run:exercises": "cypress run --env configFile=exercises",
+    "cy:open": "npm run cy:open:exercises",
+    "cy:open:final": "cypress open",
+    "cy:open:exercises": "cypress open --env configFile=exercises",
+    "pretest:run": "npm run build",
+    "test:run": "start-server-and-test start http://localhost:3000 cy:run",
+    "test:dev": "start-server-and-test dev http://localhost:3000 cy:open",
+    "dev": "npm-run-all --parallel dev:*",
+    "dev:server": "node server",
+    "dev:client": "react-scripts start",
+    "build": "react-scripts build",
+    "start": "npm-run-all --parallel start:*",
+    "start:server": "node server",
+    "start:client": "serve --no-clipboard --single --listen 3000 build",
+    "format": "prettier \"**/*.+(js|json|less|css|html|ts|tsx|md)\" --write",
+    "lint": "eslint .",
+    "validate": "npm-run-all test:run lint",
+    "netlify": "npm run test:run",
+    "setup": "node ./scripts/setup && npm run validate && node ./scripts/autofill-feedback-email.js"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged && npm run test:run"
+    }
+  },
+  "keywords": [],
+  "author": "Kent C. Dodds <kent@doddsfamily.us> (http://kentcdodds.com/)",
+  "license": "GPL-3.0",
+  "devDependencies": {
+    "cross-spawn": "^6.0.5",
+    "cypress": "^3.2.0",
+    "eslint": "^6.2.0",
+    "eslint-config-cypress": "^0.28.0",
+    "eslint-config-kentcdodds": "^14.3.1",
+    "husky": "^3.0.4",
+    "inquirer": "^6.5.1",
+    "is-ci": "^2.0.0",
+    "is-ci-cli": "^1.1.1",
+    "lint-staged": "^9.2.3",
+    "npm-run-all": "^4.1.5",
+    "prettier": "^1.16.4",
+    "prop-types": "^15.6.2",
+    "react-scripts": "^3.1.1",
+    "replace-in-file": "^4.1.3",
+    "serve": "^11.0.0",
+    "start-server-and-test": "^1.7.1",
+    "test-data-bot": "^0.8.0"
+  },
+  "dependencies": {
+    "@emotion/core": "^10.0.16",
+    "@emotion/styled": "^10.0.10",
+    "@reach/router": "^1.2.1",
+    "@testing-library/cypress": "^4.1.1",
+    "axios": "^0.19.0",
+    "emotion-theming": "^10.0.10",
+    "react": "^16.8.6",
+    "react-dom": "^16.8.6",
+    "react-point": "^3.0.1"
+  },
+  "eslintConfig": {
+    "extends": [
+      "kentcdodds",
+      "kentcdodds/import",
+      "kentcdodds/react"
+    ],
+    "rules": {
+      "no-alert": "off",
+      "react/prop-types": "off",
+      "no-console": "off"
+    }
+  },
+  "eslintIgnore": [
+    "coverage",
+    "node_modules",
+    "build",
+    "scripts/workshop-setup.js",
+    "other"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kentcdodds/jest-cypress-react-babel-webpack.git"
+  },
+  "bugs": {
+    "url": "https://github.com/kentcdodds/jest-cypress-react-babel-webpack/issues"
+  },
+  "homepage": "https://cypress-testing-workshop.netlify.com",
+  "browserslist": [
+    ">0.2%",
+    "not dead",
+    "not ie <= 11",
+    "not op_mini all"
+  ]
+}

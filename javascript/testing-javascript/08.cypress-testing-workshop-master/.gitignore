@@ -1,0 +1,8 @@
+node_modules
+coverage
+build
+cypress/videos
+cypress/screenshots
+cypress-final/videos
+cypress-final/screenshots
+package-lock.json
