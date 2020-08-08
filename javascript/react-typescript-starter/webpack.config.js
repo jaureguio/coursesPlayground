@@ -20,6 +20,7 @@ module.exports = {
   },
   module: {
     rules: [
+      { test: /\.jsx?$/, loader: 'babel-loader' },
       { test: /\.tsx?$/, loader: 'ts-loader' },
       {
         test: /\.css$/,
