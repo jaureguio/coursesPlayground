@@ -5,6 +5,7 @@ import App from '../final/06'
 // import App from '../exercise/06'
 
 beforeAll(() => {
+  window.fetch = jest.fn()
   window.fetch.mockImplementation(() =>
     Promise.resolve({json: () => Promise.resolve({data: {pokemon: {}}})}),
   )
@@ -81,7 +82,6 @@ test('displays the pokemon', async () => {
   await screen.findByRole('heading', {name: new RegExp(fakePokemon2.name, 'i')})
 
   expect(
-    window.fetch,
-    'Make certain that you are providing a dependencies list in useEffect!',
+    window.fetch
   ).not.toHaveBeenCalled()
 })
