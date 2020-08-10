@@ -1,4 +1,5 @@
 module.exports = {
+  "setupFilesAfterEnv": ["./jest.setup.js"],
   "preset": "ts-jest", // This will allow jest to type-check as it tests files.
   "transform": {
     "^.+\\.jsx?$": "babel-jest" 

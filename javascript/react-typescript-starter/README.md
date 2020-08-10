@@ -60,3 +60,34 @@ For some exercises (06 from hooks workshop (02) especifically), we need to inter
       // ...
 // ...
 ```
+
+## Installing jest-dom to Extend Expect Matchers
+
+We need to manually install  and import jest-dom from testing-library to extend the martchers available from the expectation object "expect":
+
+```powershell
+npm i -D "@testing-library/js-dom"
+```
+
+```javascript 
+import "@testing-library/jest-dom/extend-expect"
+```
+
+With this import, we now can use matchers like `expect(...).toHaveTextContent(...)`
+
+### Running Setup Files
+
+Jest comes with several properties we can set in the default config file `jest.config.js`. The `setupFilesAfterEnv` is used to provide an array described as follows: 
+
+>A list of paths to modules that run some code to configure or set up the testing framework before each test file in the suite is executed. Since setupFiles executes before the test framework is installed in the environment, this script file presents you the opportunity of running some code immediately after the test framework has been installed in the environment. If you want a path to be relative to the root directory of your project, please include <rootDir> inside a path's string, like "<rootDir>/a-configs-folder". 
+
+```javascript
+/* jest.config.js */
+module.exports = {
+  // ...
+  "setupFilesAfterEnv": ["./jest.setup.js"],
+  // ...
+
+/* jest.setup.js */
+import "@testing-library/jest-dom/extend-expect"
+```
