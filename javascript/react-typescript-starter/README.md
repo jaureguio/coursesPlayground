@@ -116,3 +116,22 @@ expect(received).toBe(expected) // Object.is equality
 Expected: 3
 Received: 2
 ```
+
+### Setting jest-expect-message
+
+After installing the package from npm, we should add `jest-expect-message` to the array of paths provided to `setupFilesAfterEnv` in the jest.config.js file.
+
+## Mocking `window.fetch
+
+In order to appropiately set the environment for the test, we can mock the globally available `fetch` function which is heavily used in the exercises to reach out to the API which provides the tested pokemon app with data.
+
+ - The mocking is setted using the jest.setup.js file, which is run (check jest.config.js) after the environment is properly established. Everytime a set of tests is run, `fetch` is going to be mocked.
+
+```javascript
+// jest.setup.js
+
+import "@testing-library/jest-dom/extend-expect"
+
+// Line added!
+window.fetch = jest.fn()
+```
