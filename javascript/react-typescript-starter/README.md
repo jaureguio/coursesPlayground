@@ -91,3 +91,28 @@ module.exports = {
 /* jest.setup.js */
 import "@testing-library/jest-dom/extend-expect"
 ```
+
+## Installing jest-expect-message
+
+>jest-expect-message allows you to call expect with a second argument of a String message.
+
+>For example the same test as above:
+
+```javascript
+test('returns 2 when adding 1 and 1', () => {
+  expect(1 + 1, 'Woah this should be 2!').toBe(3);
+});
+```
+>With jest-expect-message this will fail with your custom error message:
+
+  ● returns 2 when adding 1 and 1
+
+```
+Custom message:
+  Woah this should be 2!
+
+expect(received).toBe(expected) // Object.is equality
+
+Expected: 3
+Received: 2
+```
