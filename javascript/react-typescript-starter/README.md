@@ -14,7 +14,7 @@ Visit http://localhost:8080
 
 # My Notes
 
-## Setting Jest with Babel and TS
+### Setting Jest with Babel and TS
 
 1. Install babel-jest, @babel/core, @babel/preset-env, @babel/preset-react, ts-jest, @types/jest
 2. Create a jest.config.js file as follows:
@@ -48,7 +48,7 @@ module.exports = {
 
 4. Create the file specified for the `moduleNameMapper` (styleMock.js) property of the jest.config.js file, exporting an empty object `module.exports = {}`. This file will be used by jest to mock any stylesheet (with .css or .less extension in this particular config) imported into tested files. This files are not recognized by jest/babel.
 
-## Setting Webpack to Support Bundling of JS files
+### Setting Webpack to Support Bundling of JS files
 
 For some exercises (06 from hooks workshop (02) especifically), we need to interact with JS files. In order to make this possible with Webpack, we need to add the appropiate loader, babel-loader in this case:
 
@@ -61,7 +61,7 @@ For some exercises (06 from hooks workshop (02) especifically), we need to inter
 // ...
 ```
 
-## Installing jest-dom to Extend Expect Matchers
+### Installing jest-dom to Extend Expect Matchers
 
 We need to manually install  and import jest-dom from testing-library to extend the martchers available from the expectation object "expect":
 
@@ -75,7 +75,7 @@ import "@testing-library/jest-dom/extend-expect"
 
 With this import, we now can use matchers like `expect(...).toHaveTextContent(...)`
 
-### Running Setup Files
+#### Running Setup Files
 
 Jest comes with several properties we can set in the default config file `jest.config.js`. The `setupFilesAfterEnv` is used to provide an array described as follows: 
 
@@ -92,7 +92,7 @@ module.exports = {
 import "@testing-library/jest-dom/extend-expect"
 ```
 
-## Installing jest-expect-message
+### Installing jest-expect-message
 
 >jest-expect-message allows you to call expect with a second argument of a String message.
 
@@ -117,11 +117,11 @@ Expected: 3
 Received: 2
 ```
 
-### Setting jest-expect-message
+#### Setting jest-expect-message
 
 After installing the package from npm, we should add `jest-expect-message` to the array of paths provided to `setupFilesAfterEnv` in the jest.config.js file.
 
-## Mocking `window.fetch
+### Mocking `window.fetch`
 
 In order to appropiately set the environment for the test, we can mock the globally available `fetch` function which is heavily used in the exercises to reach out to the API which provides the tested pokemon app with data.
 
@@ -135,3 +135,49 @@ import "@testing-library/jest-dom/extend-expect"
 // Line added!
 window.fetch = jest.fn()
 ```
+
+## 03. Advanced React Hooks
+
+### useLayoutEffect Hook Exercise Notes
+
+- Case 0:
+  - MessagesDisplay: useEffect
+  - SlooooowSibling: useEffect
+
+This is the base case, the change in the scrolling position on the messages list from the MessagesDisplay component is perceived by the user because the calculation/adjustment is performed after React renders the virtual DOM and the browser paints it on the screen. We need to consider that the delay noticed is purposedly created by the effect computation in the SlooooowSibling component. Remember that effects are run in order of appearance and synchronously.
+
+
+- Case 1:
+  - MessagesDisplay: useLayoutEffect
+  - SlooooowSibling: useEffect
+
+In this case, the scrolling adjustment is not perceived by the user (better user experience!) when a new message is added and overflows the messages list container. This happens because the effect performing the adjustment is occurring in a useLayoutEffect hook, which happens after React render the virtual DOM BUT BEFORE the browser actually paints the user screen. Is important to point out that the delay is going to exist anyway, however, it is perceived when clicking the add/remove message button multiple times and after the first message add/remove action.
+
+- Case 2:
+  - MessagesDisplay: useLayoutEffect
+  - SlooooowSibling: useLayoutEffect
+
+The repainting of the screen with any added/removed messages along with the scrolling adjustment (if needed) is going to be delayed due to the running of the SlooooowSibling effect callback (LayoutEffect).
+
+### Implementing useDebugValue
+
+`useDebugValue` also takes a second argument which is an optional formatter
+function, allowing you to do stuff like this if you like:
+
+```javascript
+const formatCountDebugValue = ({initialCount, step}) =>
+  `init: ${initialCount}; step: ${step}`
+
+function useCount({initialCount = 0, step = 1} = {}) {
+  React.useDebugValue({initialCount, step}, formatCountDebugValue)
+  const [count, setCount] = React.useState(0)
+  const increment = () => setCount(c => c + 1)
+  return [count, increment]
+}
+```
+
+This is only really useful for situations where computing the debug value is
+computationally expensive (and therefore you only want it calculated when the devtools are open and now when your users are using the app).
+
+## 04. Advanced React Patterns
+
