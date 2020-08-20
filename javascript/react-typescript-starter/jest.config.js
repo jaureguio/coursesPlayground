@@ -1,5 +1,5 @@
 module.exports = {
-  "setupFilesAfterEnv": ["./jest.setup.js", "jest-expect-message"],
+  "setupFilesAfterEnv": ["./jest.setup.js", "jest-expect-message", "whatwg-fetch"],
   "preset": "ts-jest", // This will allow jest to type-check as it tests files.
   "transform": {
     "^.+\\.jsx?$": "babel-jest" 
