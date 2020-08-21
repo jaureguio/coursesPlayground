@@ -46,6 +46,7 @@
     "jest": "^26.2.2",
     "jest-expect-message": "^1.0.2",
     "msw": "^0.20.5",
+    "prettier": "^2.0.5",
     "style-loader": "^1.2.1",
     "ts-jest": "^26.1.4",
     "ts-loader": "^6.2.1",

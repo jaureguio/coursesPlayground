@@ -1,10 +1,14 @@
+const path = require('path')
+
 module.exports = {
-  "setupFilesAfterEnv": ["./jest.setup.js", "jest-expect-message", "whatwg-fetch"],
-  "preset": "ts-jest", // This will allow jest to type-check as it tests files.
-  "transform": {
+  testEnvironment: 'jest-environment-jsdom',
+  setupFilesAfterEnv: ["./jest.setup.js"],
+  moduleDirectories: ['node_modules', path.join(__dirname, 'src')],
+  preset: "ts-jest", // This will allow jest to type-check as it tests files.
+  transform: {
     "^.+\\.jsx?$": "babel-jest" 
   },
-  "moduleNameMapper": {
+  moduleNameMapper: {
     "\\.(css|less)": "<rootDir>/src/__tests__/__mocks__/styleMock.js"
   }
 }

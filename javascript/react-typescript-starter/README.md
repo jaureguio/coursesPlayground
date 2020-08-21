@@ -230,3 +230,44 @@ module.exports = {
 ### Handling HTTP Interaction with Mock Service Worker (msw)
 
 >To handle these fetch requests, we're going to start up a "server" which is not actually a server, but simply a request interceptor. This makes it really easy to get things setup (because we don't have to worry about finding an available port for the server to listen to and making sure we're making requests to the right port) and it also allows us to mock requests made to other domains. We'll be using a tool called MSW for this. 
+
+### Using Inline Snapshots
+
+_[From Jest's snapshot testing documentation](https://jestjs.io/docs/en/snapshot-testing)_
+
+>Inline snapshots behave identically to external snapshots (.snap files), except the snapshot values are written automatically back into the source code. This means you can get the benefits of automatically generated snapshots without having to switch to an external file to make sure the correct value was written.Inline snapshots are powered by Prettier. To use inline snapshots you must have prettier installed in your project. Your Prettier configuration will be respected when writing to test files.
+
+#### Example:
+
+First, you write a test, calling .toMatchInlineSnapshot() with no arguments:
+
+```javascript
+it('renders correctly', () => {
+  const tree = renderer
+    .create(<Link page="https://prettier.io">Prettier</Link>)
+    .toJSON();
+  expect(tree).toMatchInlineSnapshot();
+});
+```
+
+The next time you run Jest, tree will be evaluated, and a snapshot will be written as an argument to toMatchInlineSnapshot:
+
+```javascript
+it('renders correctly', () => {
+  const tree = renderer
+    .create(<Link page="https://prettier.io">Prettier</Link>)
+    .toJSON();
+  expect(tree).toMatchInlineSnapshot(`
+<a
+  className="normal"
+  href="https://prettier.io"
+  onMouseEnter={[Function]}
+  onMouseLeave={[Function]}
+>
+  Prettier
+</a>
+`);
+});
+```
+
+That's all there is to it! You can even update the snapshots with --updateSnapshot or using the u key in --watch mode.
