@@ -271,3 +271,40 @@ it('renders correctly', () => {
 ```
 
 That's all there is to it! You can even update the snapshots with --updateSnapshot or using the u key in --watch mode.
+
+## 06. React Performance
+
+### Webpack Production Builds and Profiling
+
+When comparing performance is important to remember that development builds are considerably slower than a production build. Development builds include additional dependencies for improved development purposes. Also, development builds supports profiling on React apps (using webpack) by default.
+
+  - In order to enable profiling with production builds, the following configuration is needed on the webpack production config file:
+
+```javascript
+// webpack.prod.config.js
+
+module.exports = {
+  // ...
+  mode: 'production',
+  resolve: {
+    // ...
+    alias: {
+      'react-dom': 'react-dom/profiling',
+      'scheduler/tracing': 'scheduler/tracing-profiling',
+    }
+  },
+  // ...
+```
+
+It is common to create scripts specific for each build (note that inline config options will override any config file setup):
+
+```json
+{
+  // ...
+  "scripts": {
+    "build": "webpack --config webpack.prod.config.js",
+    // start or dev
+    "start": "webpack-dev-server -d --content-base ./public",
+  }
+}
+```
