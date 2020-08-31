@@ -308,3 +308,23 @@ It is common to create scripts specific for each build (note that inline config 
   }
 }
 ```
+
+## 07. React Suspense
+
+### Opting Into React Concurrent Mode
+
+To take advantage of the concurrent mode provided by React we need to install the experimental version of both react and react-dom. Doing this will enable us to make use of new API's as follows:
+
+```javascript
+import ReactDOM from 'react-dom';
+
+// If you previously had:
+//
+// ReactDOM.render(<App />, document.getElementById('root'));
+//
+// You can opt into Concurrent Mode by writing:
+
+ReactDOM.unstable_createRoot(
+  document.getElementById('root')
+).render(<App />);
+```
