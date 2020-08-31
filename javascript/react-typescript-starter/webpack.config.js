@@ -6,10 +6,11 @@ module.exports = {
   entry: './src/app/app.tsx',
   mode: 'production',
   plugins: [
-    new CleanWebpackPlugin({
-      cleanAfterEveryBuildPatterns: ['public/build'],
-    }),
+    // new CleanWebpackPlugin({
+    //   cleanAfterEveryBuildPatterns: ['public/build'],
+    // }),
     new HtmlWebpackPlugin({
+      // template: 'public/index.html',
       template: 'src/templates/index.html',
     }),
   ],
